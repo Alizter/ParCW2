@@ -6,7 +6,7 @@
 #include "main.h"
 
 /* File width
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 */
 
 /*
@@ -18,21 +18,18 @@
 */
 
 /*
---------- Main program --------------------------------------------------------
+--------- Main program ---------------------------------------------------------
 */
 
 
 // Number of threads to use
 int threadNum = 4;
 
-// Precision to achieve
-double inputPrecision = 1E-3;
 
-
-// Program takes in dim and fileName 
+// Program takes in dim, fileName and precision
 int main(int argc, char** argv)
 {
-	if (argc != 3)
+	if (argc != 4)
 	{
 		// We do not have the right number of arguments
 		throw(ArgNumExeption, NULL);
@@ -44,8 +41,17 @@ int main(int argc, char** argv)
 	// File name for array
 	char* fileName = argv[2];
 	
+	// Read precision
+	const double inputPrecision = strtod(argv[3], NULL);
+	
+	// If our precision is too small, our program may never stop
+	if (inputPrecision <= 0.0)
+	{
+		throw(PrecisionException, NULL);
+	}
+	
 	// Read array
-	double* inputArray = (double*)malloc(dim * dim * sizeof(double));
+	double* inputArray = (double*)calloc(dim * dim, sizeof(double));
 	readArray(dim, fileName, inputArray);
 
 	
@@ -115,7 +121,7 @@ int isDiff(double precision, int dim, double* old, double* new)
 }
 
 /*
------ Error handling ----------------------------------------------------------
+----- Error handling -----------------------------------------------------------
 */
 
 
@@ -143,6 +149,10 @@ void throw(Error e, char** args)
 		case ArrayReadFailure:
 			printf("Error: Could not read array.\n");
 			break;
+			
+		case PrecisionException:
+			printf("Error: Given precision is too small.\n");
+			break;
 	}
 	
 	// Exit with error code
@@ -151,7 +161,7 @@ void throw(Error e, char** args)
 }
 
 /*
------ File read and write -----------------------------------------------------
+----- File read and write ------------------------------------------------------
 	
 	Here we add functionality for reading and writing
 	of files. That way a text file with a list of numbers (doubles) 
@@ -166,25 +176,54 @@ void throw(Error e, char** args)
 // Obviously if there are too many values it doesn't read them
 void readArray(int dim, char fileName[255], double* array)
 {
+	FILE* file = fopen(fileName, "r");
+	
 	char* buffer;
-	
-	FILE* file = fopen(fileName, "r"); // need to put correct mode
-	
-	int charCount;
 	
 	if (file)
 	{
+		fseek(file, 0, SEEK_END);
+		long fileLength = ftell(file);
+		fseek(file, 0, SEEK_SET);
 		
-		// while ((c = getc(file)) != EOF)
-		// {
-			// putchar(c)
-		// }
+		buffer = malloc(fileLength);
+		
+		if (buffer)
+		{
+			fread(buffer, 1, fileLength, file);
+		}
+		else
+		{
+			// Could not read array so throw error
+			throw(ArrayReadFailure, NULL);
+		}
+		
+		fclose(file);
 	}
 	else
 	{
 		// Could not read file so throw error
 		char* args[1] = { fileName };
 		throw(FileException, args);
+	}
+	
+	// Now that we have a successfull read we can process our buffer
+	
+	// Number of entries read
+	int count = 0;
+	
+	// pointer to current read location
+	char* ptr = buffer;
+	
+	// while our current read location isn't null and
+	// our number of entries is less than expected
+	while (ptr && count++ < dim * dim)
+	{
+		// the "count"th double entry is the next double
+		array[count] = strtod(buffer, &ptr);
+		// we set the start of the buffer to where the comma should be
+		// WARNING if there are spaces in the string this bit will mess up
+		buffer = ptr + 1;
 	}
 }
 
@@ -202,7 +241,7 @@ void printArray(int dim, double* array)
 }
 
 /*
----- Implementations ----------------------------------------------------------
+---- Implementations -----------------------------------------------------------
 */
 
 
@@ -225,7 +264,7 @@ void naiveIterate(int dim, double* old, double* new)
 			// the new array is the average
 			// of it's neighbours in the old
 			new[i * dim + j] =	0.25 * (
-			    old[(i + 1) * dim + j] + 
+				old[(i + 1) * dim + j] + 
 				old[(i - 1) * dim + j] + 
 				old[i * dim + j + 1] + 
 				old[i * dim + j - 1]);

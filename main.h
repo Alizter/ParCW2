@@ -18,7 +18,8 @@ typedef enum errors
 	FileException = -1,	 	// Program couldn't read file
 	DimParse = -2, 			// Program couldn't parse dimension
 	ArgNumExeption = -3,	// Program has wrong number of arguents
-	ArrayReadFailure = -4	// Program couldn't read array
+	ArrayReadFailure = -4,	// Program couldn't read array
+	PrecisionException = -5	// Program precision too small
 } Error;
 
 void throw(Error e, char** args);
