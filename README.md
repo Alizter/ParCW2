@@ -15,3 +15,8 @@ See pdf attached.
  The program will read the first `dim * dim` entries of this file and take the
  rest as zero.
  
+ For example the file `array1` has 25 entries, so it can be ran as
+ 
+ ```
+	./main 5 array1
+ ```
