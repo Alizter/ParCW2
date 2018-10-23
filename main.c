@@ -1,23 +1,25 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
 #include "main.h"
 
-/*
-
-	Main program
-
+/* File width
+-------------------------------------------------------------------------------
 */
 
-// Dimension of the square array
- int inputDim = 5;
+/*
+	Contents:
+		* Main program
+		* Error handling
+		* File read and write
+		* Implementations (this is the bit with parallel stuff) 
+*/
 
-// The initial array
-double inputArray[25] = 
-    {-30, -38, -96, -39, 39, 13, 46, 1, -57, 74, -4, -18,
-     -25, -36, 52, -21, -18, 64, -40, 35, -62, 2, -65, -97, 62};
-
-
+/*
+--------- Main program --------------------------------------------------------
+*/
 
 
 // Number of threads to use
@@ -27,45 +29,65 @@ int threadNum = 4;
 double inputPrecision = 1E-3;
 
 
-int main()
-{	
+// Program takes in dim and fileName 
+int main(int argc, char** argv)
+{
+	if (argc != 3)
+	{
+		// We do not have the right number of arguments
+		throw(ArgNumExeption, NULL);
+	}
+	
+	// Inputted dimension
+	const int dim = atoi(argv[1]);
+	
+	// File name for array
+	char* fileName = argv[2];
+	
+	// Read array
+	double* inputArray = (double*)malloc(dim * dim * sizeof(double));
+	readArray(dim, fileName, inputArray);
 
+	
 	// Print input array
 	printf("Input array:\n");	
-	printArray(inputDim, inputArray);
+	printArray(dim, inputArray);
 	
 	// Allocate space for new array
-	double* new = (double*)malloc(inputDim * inputDim * sizeof(double));
+	double* new = (double*)malloc(dim * dim * sizeof(double));
 	
 	// Allocate space for old array (this may be unnecessary)
-	double* old = (double*)malloc(inputDim * inputDim * sizeof(double));
+	double* old = (double*)malloc(dim * dim * sizeof(double));
 	
 	// copy input to new
-	memcpy(new, inputArray, sizeof(double) * inputDim * inputDim);
+	memcpy(new, inputArray, sizeof(double) * dim * dim);
 	
 	//copy input to old
-	memcpy(old, inputArray, sizeof(double) * inputDim * inputDim);
+	memcpy(old, inputArray, sizeof(double) * dim * dim);
 	
 	printf("\n");
-	
+		
 	do
 	{
-	    //iterate once on old saving to new
-		naiveIterate(inputDim, old, new);
-		
 		//copy value of new to old
-		memcpy(old, new, sizeof(double) * inputDim * inputDim);
+		memcpy(old, new, sizeof(double) * dim * dim);
+		
+	    //iterate once on old saving to new
+		naiveIterate(dim, old, new);
+		
+		
 	}
 	// loop if old and new are too different
-	while (isDiff(inputPrecision, inputDim, new, old));
+	while (isDiff(inputPrecision, dim, new, old));
 	
 
 	
 	// Print new array
 	printf("Result:\n");
-	printArray(inputDim, new);
+	printArray(dim, new);
 	
-	return 0;
+	// Exit the program Successfully
+	throw(Success, NULL);
 }
 
 int isDiff(double precision, int dim, double* old, double* new)
@@ -78,8 +100,11 @@ int isDiff(double precision, int dim, double* old, double* new)
 		{
 			// If we find an entry that is not within precision
 			// then it is different
+			//double diff = fabs(old[i * dim + j] - new[i * dim + j]);
+			
 			if (fabs(old[i * dim + j] - new[i * dim + j]) > precision)
 			{
+				//printf("DIFF (%d,%d): %f\n", i, j, diff);
 			    return 1;
             }
 		}
@@ -89,11 +114,95 @@ int isDiff(double precision, int dim, double* old, double* new)
 	return 0;
 }
 
+/*
+----- Error handling ----------------------------------------------------------
+*/
+
+
+// Prints error message (or Success) with arguments and exits
+void throw(Error e, char** args)
+{
+	switch (e)
+	{
+		case Success:
+			printf("Program finished successfully.\n");
+			break;
+		
+		case FileException:
+			printf("Error: Could not read file: %s\n", args[0]);
+			break;
+		
+		case DimParse:
+			printf("Error: Could not parse dimension given.\n");
+			break;
+		
+		case ArgNumExeption:
+			printf("Error: Incorrect number of arguments given.\n");
+			break;
+		
+		case ArrayReadFailure:
+			printf("Error: Could not read array.\n");
+			break;
+	}
+	
+	// Exit with error code
+	printf("Program exiting.\n");
+	exit(e);
+}
 
 /*
+----- File read and write -----------------------------------------------------
+	
+	Here we add functionality for reading and writing
+	of files. That way a text file with a list of numbers (doubles) 
+	seperated by commas can be read, and a number providing the details 
+	of the dimension can be given. This will allow the progam to read an
+	"array".
+*/
 
-	Implementations
+// Given a file name and a dimension reads (dim * dim) double values 
+// from given file and returns a pointer to them in memory. If the
+// file does not have enough values it simply makes them zero.
+// Obviously if there are too many values it doesn't read them
+void readArray(int dim, char fileName[255], double* array)
+{
+	char* buffer;
+	
+	FILE* file = fopen(fileName, "r"); // need to put correct mode
+	
+	int charCount;
+	
+	if (file)
+	{
+		
+		// while ((c = getc(file)) != EOF)
+		// {
+			// putchar(c)
+		// }
+	}
+	else
+	{
+		// Could not read file so throw error
+		char* args[1] = { fileName };
+		throw(FileException, args);
+	}
+}
 
+void printArray(int dim, double* array)
+{
+	for (int i = 0; i < dim; i++)
+	{
+		for (int j = 0; j < dim; j++)
+		{
+			printf("%f ", array[i * dim + j]);
+		}
+		
+		printf("\n");
+	}
+}
+
+/*
+---- Implementations ----------------------------------------------------------
 */
 
 
@@ -124,15 +233,4 @@ void naiveIterate(int dim, double* old, double* new)
 	}
 }
 
-void printArray(int dim, double* array)
-{
-	for (int i = 0; i < dim; i++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			printf("%f ", array[i * dim + j]);
-		}
-		
-		printf("\n");
-	}
-}
+
