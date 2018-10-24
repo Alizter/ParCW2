@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -Wconversion -pthread -g
-
+CFLAGS= -g -pthread -Wall -Wconversion -Wextra  
+##  
 main: main.o
 	$(CC) $(CFLAGS) -o main main.o 
 

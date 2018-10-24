@@ -1,22 +1,58 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+// Array data structure
+
+typedef struct
+{
+	double* array;
+	int dim;
+} SquareMatrix;
+
+SquareMatrix* duplicateMatrix(SquareMatrix* old);
+void freeMatrix(SquareMatrix* matrix);
+SquareMatrix* newMatrix(int dim);
+
+// Main program
+
+int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
+
+// File read and write
+
+SquareMatrix* readMatrix(int dim, char* fileName);
+void printMatrix(SquareMatrix* matrix);
 
 
-int isDiff(double precision, int dim, double* old, double* new);
 
-void printArray(int dim, double* array);
-void readArray(int dim, char fileName[255], double* array);
 
-void naiveIterate(int dim, double* old, double* new);
+// Implementations
+
+
+void naiveIterate(SquareMatrix* old, SquareMatrix* new);
 void parIterate(int dim, double* old, double* new, int threadNum);
 
 void* paverage(void* args);
 
-// Error codes
-typedef enum errors
+
+
+
+// In order to pass this function to a pthread we need it to have signature 
+// void* foo(void*); This will be done by taking the arguments of average
+// and squishing them into a struct.
+
+typedef struct
 {
-	Success = 0, 			// Program finished sucessfully
+	int* dim;
+	int* i;
+	int* j;
+	double* old;
+	double* new;
+} AvgArgs;
+
+// Error handling
+
+typedef enum
+{
 	FileException = -1,	 	// Program couldn't read file
 	DimParse = -2, 			// Program couldn't parse dimension
 	ArgNumExeption = -3,	// Program has wrong number of arguents
@@ -28,17 +64,5 @@ typedef enum errors
 void throw(Error e, char** args);
 
 
-// In order to pass this function to a pthread we need it to have signature 
-// void* foo(void*); This will be done by taking the arguments of average
-// and squishing them into a struct.
-
-typedef struct AvgArgs
-{
-    int* dim;
-    int* i;
-    int* j;
-    double* old;
-    double* new;
-} AvgArgs;
 
 #endif
