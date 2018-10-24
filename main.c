@@ -39,6 +39,11 @@ int main(int argc, char** argv)
 	// Inputted dimension
 	const int dim = atoi(argv[1]);
 	
+	if (dim <= 0)
+	{
+	    throw(DimensionException, NULL);
+	}
+	
 	// File name for array
 	char* fileName = argv[2];
 	
@@ -52,7 +57,7 @@ int main(int argc, char** argv)
 	}
 	
 	// Read array
-	double* inputArray = (double*)calloc(dim * dim, sizeof(double));
+	double inputArray[dim * dim];
 	readArray(dim, fileName, inputArray);
 
 	
@@ -61,10 +66,10 @@ int main(int argc, char** argv)
 	printArray(dim, inputArray);
 	
 	// Allocate space for new array
-	double* new = (double*)malloc(dim * dim * sizeof(double));
+	double new[dim * dim];
 	
 	// Allocate space for old array (this may be unnecessary)
-	double* old = (double*)malloc(dim * dim * sizeof(double));
+	double old[dim * dim];
 	
 	// copy input to new
 	memcpy(new, inputArray, sizeof(double) * dim * dim);
@@ -80,8 +85,8 @@ int main(int argc, char** argv)
 		memcpy(old, new, sizeof(double) * dim * dim);
 		
 	    //iterate once on old saving to new
-		naiveIterate(dim, old, new);
-		//parIterate(dim, old, new, threadNum);
+		//naiveIterate(dim, old, new);
+		parIterate(dim, old, new, threadNum);
 		
 	}
 	// loop if old and new are too different
@@ -94,7 +99,8 @@ int main(int argc, char** argv)
 	printArray(dim, new);
 	
 	// Exit the program Successfully
-	throw(Success, NULL);
+	printf("Program finished.");
+	return 0;
 }
 
 int isDiff(double precision, int dim, double* old, double* new)
@@ -130,11 +136,7 @@ int isDiff(double precision, int dim, double* old, double* new)
 void throw(Error e, char** args)
 {
 	switch (e)
-	{
-		case Success:
-			printf("Program finished successfully.\n");
-			break;
-		
+	{		
 		case FileException:
 			printf("Error: Could not read file: %s\n", args[0]);
 			break;
@@ -154,6 +156,10 @@ void throw(Error e, char** args)
 		case PrecisionException:
 			printf("Error: Given precision is too small.\n");
 			break;
+			
+		case DimensionException:
+		    printf("Error: Given dimension is too small.\n");
+		    break;
 	}
 	
 	// Exit with error code
@@ -175,7 +181,7 @@ void throw(Error e, char** args)
 // from given file and returns a pointer to them in memory. If the
 // file does not have enough values it simply makes them zero.
 // Obviously if there are too many values it doesn't read them
-void readArray(int dim, char fileName[255], double* array)
+void readArray(int dim, char fileName[255], double array[dim * dim])
 {
 	FILE* file = fopen(fileName, "r");
 	
@@ -261,61 +267,31 @@ void naiveIterate(int dim, double* old, double* new)
 		// Iterate over inner coloumns
 		for (int j = 1; j < dim - 1; j++)
 		{
-			average(dim, i, j, old, new);
+            // The corresponding entry of
+            // the new array is the average
+            // of it's neighbours in the old
+            new[i * dim + j] = 0.25 * (
+                old[(i + 1) * dim + j] + 
+                old[(i - 1) * dim + j] + 
+                old[i * dim + j + 1] + 
+                old[i * dim + j - 1]);
 		}
 	}
-}
-
-
-// The corresponding entry of
-// the new array is the average
-// of it's neighbours in the old
-void average(int dim, int i, int j, double* old, double* new)
-{
-	new[i * dim + j] = 0.25 * (old[(i + 1) * dim + j] + 
-	    old[(i - 1) * dim + j] + 
-		old[i * dim + j + 1] + 
-		old[i * dim + j - 1]);
-}
-
-// In order to pass this function to a pthread we need it to have signature 
-// void* foo(void*); This will be done by taking the arguments of average
-// and squishing them into a struct.
-
-typedef struct AvgArgs
-{
-    int dim;
-    int i;
-    int j;
-    double* old;
-    double* new;
-} AvgArgs;
-
-void* paverage(void* packedArgs)
-{
-    //Casting void* to (AvgArgs*) and taking value
-    AvgArgs args = *(AvgArgs*)packedArgs;
-       
-    average(args.dim, args.i, args.j, args.old, args.new);
-    
 }
 
 // Parallel implementation
 // Complete nonsense doesn't work
 void parIterate(int dim, double* old, double* new, int threadNum)
 {
-	// Plan:
-	// We will not need to use locks on resources as we are simply reading and
-	// writing seperately by design. So I propose some sort of job queue, which
-	// will allow a bunch of threads to tackle. That way I can vary the number
-	// of threads without having to worry about how to divide up the problem.
+	// Create a job queue and then run "threadNum" many threads 
+	// to process them
 	
     // Allocate space for pointers to structs with arguments in them,
     // this will essentially be our jobs queue
     int queueSize =  (dim - 1) * (dim - 1);
     	
-    AvgArgs* args = (AvgArgs*)malloc(sizeof(AvgArgs) * queueSize);
-	
+    AvgArgs args[queueSize];
+    
 	// Iterate over rows
 	for (int i = 1; i < dim - 1; i++)
 	{
@@ -323,46 +299,61 @@ void parIterate(int dim, double* old, double* new, int threadNum)
 		for (int j = 1; j < dim - 1; j++)
 		{		    
 		    // Squash arguments into struct
-		    (args + i * dim + j)->dim = dim;
-		    (args + i * dim + j)->i = i;
-		    (args + i * dim + j)->j = j;
+		    (args + i * dim + j)->dim = &dim;
+		    (args + i * dim + j)->i = &i;
+		    (args + i * dim + j)->j = &j;
 		    (args + i * dim + j)->old = old;
 		    (args + i * dim + j)->new = new;
 		}
 	}
 	
 	//Now that we have our jobs we can go and run them
+	
 	// Create thread ids
-	pthread_t* threads = (pthread_t*)malloc(sizeof(pthread_t) * threadNum);
-	
-	//Create pthread attributes
-	pthread_attr_t* attrs = 
-	    (pthread_attr_t*)malloc(sizeof(pthread_attr_t) * threadNum);
-	
-	// Initialise attributes
-	for (int i = 0; i < threadNum; i++)
-	{
-	    pthread_attr_init(attrs + i);
-	}
-
+	pthread_t threads[queueSize];
 	
 	// Create pthreads
-	//pthread_create(&tid, &attr, paverage, args);
-	
-	for (int i = 0; i < queueSize; i++)
+	for (int i = 0; i < threadNum; i++)
 	{
-	    pthread_create(
-	        threads + (i % threadNum), 
-	        attrs + (i % threadNum), 
-	        paverage, 
-	        args + i);
+	    pthread_create(threads + i, NULL, paverage, args + i);
 	}
 	
 	// Wait for threads
-	for (int i = 0; i < queueSize; i++)
+	for (int i = 0; i < threadNum; i++)
 	{
-	    pthread_join(threads + (i % threadNum), NULL);
+	    pthread_join(threads[i], NULL);
 	}
+}
+
+pthread_mutex_t lock;
+
+void* paverage(void* packedArgs)
+{
+    //Casting void* to (AvgArgs*) and taking value
+    AvgArgs args = *(AvgArgs*)packedArgs;
+    
+    printf("%f\n", args.old[(*args.i + 1) * *args.dim + *args.j]);
+    
+     // Lock mutex
+    pthread_mutex_lock(&lock);
+    
+    // Calculate value
+    double result = 0.25 * 
+        (args.old[(*args.i + 1) * *args.dim + *args.j] + 
+	    args.old[(*args.i - 1) * *args.dim + *args.j] + 
+		args.old[*args.i * *args.dim + *args.j + 1] + 
+		args.old[*args.i * *args.dim + *args.j - 1]);
+    
+   
+    
+    // Write to memory new value
+    //args.new[args.i * args.dim + args.j] = result;
+    
+    // Unlock mutex
+    pthread_mutex_unlock(&lock);
+    
+    // Exiting safely
+    pthread_exit(0);
 }
 
 
