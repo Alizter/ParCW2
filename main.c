@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 		
 	    //iterate once on old saving to new
 		naiveIterate(dim, old, new);
-		
+		//parIterate(dim, old, new, threadNum);
 		
 	}
 	// loop if old and new are too different
@@ -266,19 +266,103 @@ void naiveIterate(int dim, double* old, double* new)
 	}
 }
 
-// Parallel implementation
-void parIterate(int dim, double* old, double* new, int threadNum)
-{
-	
-}
 
 // The corresponding entry of
 // the new array is the average
 // of it's neighbours in the old
 void average(int dim, int i, int j, double* old, double* new)
 {
-	new[i * dim + j] = 0.25 * (old[(i + 1) * dim + j] + old[(i - 1) * dim + j] + 
-		old[i * dim + j + 1] + old[i * dim + j - 1]);
+	new[i * dim + j] = 0.25 * (old[(i + 1) * dim + j] + 
+	    old[(i - 1) * dim + j] + 
+		old[i * dim + j + 1] + 
+		old[i * dim + j - 1]);
+}
+
+// In order to pass this function to a pthread we need it to have signature 
+// void* foo(void*); This will be done by taking the arguments of average
+// and squishing them into a struct.
+
+typedef struct AvgArgs
+{
+    int dim;
+    int i;
+    int j;
+    double* old;
+    double* new;
+} AvgArgs;
+
+void* paverage(void* packedArgs)
+{
+    //Casting void* to (AvgArgs*) and taking value
+    AvgArgs args = *(AvgArgs*)packedArgs;
+       
+    average(args.dim, args.i, args.j, args.old, args.new);
+    
+}
+
+// Parallel implementation
+// Complete nonsense doesn't work
+void parIterate(int dim, double* old, double* new, int threadNum)
+{
+	// Plan:
+	// We will not need to use locks on resources as we are simply reading and
+	// writing seperately by design. So I propose some sort of job queue, which
+	// will allow a bunch of threads to tackle. That way I can vary the number
+	// of threads without having to worry about how to divide up the problem.
+	
+    // Allocate space for pointers to structs with arguments in them,
+    // this will essentially be our jobs queue
+    int queueSize =  (dim - 1) * (dim - 1);
+    	
+    AvgArgs* args = (AvgArgs*)malloc(sizeof(AvgArgs) * queueSize);
+	
+	// Iterate over rows
+	for (int i = 1; i < dim - 1; i++)
+	{
+		// Iterate over inner coloumns
+		for (int j = 1; j < dim - 1; j++)
+		{		    
+		    // Squash arguments into struct
+		    (args + i * dim + j)->dim = dim;
+		    (args + i * dim + j)->i = i;
+		    (args + i * dim + j)->j = j;
+		    (args + i * dim + j)->old = old;
+		    (args + i * dim + j)->new = new;
+		}
+	}
+	
+	//Now that we have our jobs we can go and run them
+	// Create thread ids
+	pthread_t* threads = (pthread_t*)malloc(sizeof(pthread_t) * threadNum);
+	
+	//Create pthread attributes
+	pthread_attr_t* attrs = 
+	    (pthread_attr_t*)malloc(sizeof(pthread_attr_t) * threadNum);
+	
+	// Initialise attributes
+	for (int i = 0; i < threadNum; i++)
+	{
+	    pthread_attr_init(attrs + i);
+	}
+
+	
+	// Create pthreads
+	//pthread_create(&tid, &attr, paverage, args);
+	
+	for (int i = 0; i < queueSize; i++)
+	{
+	    pthread_create(
+	        threads + (i % threadNum), 
+	        attrs + (i % threadNum), 
+	        paverage, 
+	        args + i);
+	}
+	
+	// Wait for threads
+	for (int i = 0; i < queueSize; i++)
+	{
+	    pthread_join(threads + (i % threadNum), NULL);
+	}
 }
 
 
