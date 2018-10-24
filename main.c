@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <pthread.h>
 
 #include "main.h"
 
@@ -260,16 +261,24 @@ void naiveIterate(int dim, double* old, double* new)
 		// Iterate over inner coloumns
 		for (int j = 1; j < dim - 1; j++)
 		{
-			// The corresponding entry of
-			// the new array is the average
-			// of it's neighbours in the old
-			new[i * dim + j] =	0.25 * (
-				old[(i + 1) * dim + j] + 
-				old[(i - 1) * dim + j] + 
-				old[i * dim + j + 1] + 
-				old[i * dim + j - 1]);
+			average(dim, i, j, old, new);
 		}
 	}
+}
+
+// Parallel implementation
+void parIterate(int dim, double* old, double* new, int threadNum)
+{
+	
+}
+
+// The corresponding entry of
+// the new array is the average
+// of it's neighbours in the old
+void average(int dim, int i, int j, double* old, double* new)
+{
+	new[i * dim + j] = 0.25 * (old[(i + 1) * dim + j] + old[(i - 1) * dim + j] + 
+		old[i * dim + j + 1] + old[i * dim + j - 1]);
 }
 
 

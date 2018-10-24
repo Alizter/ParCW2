@@ -9,6 +9,8 @@ void printArray(int dim, double* array);
 void readArray(int dim, char fileName[255], double* array);
 
 void naiveIterate(int dim, double* old, double* new);
+void parIterate(int dim, double* old, double* new, int threadNum);
+void average(int dim, int i, int j, double* old, double* new);
 
 
 // Error codes
