@@ -7,7 +7,7 @@ See pdf attached.
 ## How to use
 
  1. Compile using `make`.
- 2. Run `./main dim file prec
+ 2. Run `./main dim file prec`
  
  Where `dim` is the dimension of the array (i.e. it is a square array with 
  `dim * dim` entries). `file` is the filename of the file with the entries in.
