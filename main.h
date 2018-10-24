@@ -1,6 +1,11 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+
+
+// Main program
+
+
 // Array data structure
 
 typedef struct
@@ -13,9 +18,6 @@ SquareMatrix* duplicateMatrix(SquareMatrix* old);
 void freeMatrix(SquareMatrix* matrix);
 SquareMatrix* newMatrix(int dim);
 
-// Main program
-
-int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
 
 // File read and write
 
@@ -27,11 +29,11 @@ void printMatrix(SquareMatrix* matrix);
 
 // Implementations
 
-
+int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
 void naiveIterate(SquareMatrix* old, SquareMatrix* new);
-void parIterate(int dim, double* old, double* new, int threadNum);
 
-void* paverage(void* args);
+//void parIterate(int dim, double* old, double* new, int threadNum);
+//void* paverage(void* args);
 
 
 
@@ -58,7 +60,8 @@ typedef enum
 	ArgNumExeption = -3,	// Program has wrong number of arguents
 	ArrayReadFailure = -4,	// Program couldn't read array
 	PrecisionException = -5,// Program precision too small
-	DimensionException = -6 // Program dimension too small
+	DimensionException = -6,// Program dimension too small
+	ThreadNumException = -7 // Program threadNum too small
 } Error;
 
 void throw(Error e, char** args);

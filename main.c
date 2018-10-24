@@ -13,8 +13,8 @@
 /*
 	Contents:
 		* Main program
+		* Array data structure	
 		* File read and write
-		* Array data structure
 		* Implementations (this is the bit with parallel stuff) 
 		* Error handling
 */
@@ -24,14 +24,11 @@
 */
 
 
-// Number of threads to use
-int threadNum = 4;
-
 
 // Program takes in dim, fileName and precision
 int main(int argc, char** argv)
 {
-	if (argc != 4)
+	if (argc != 5)
 	{
 		// We do not have the right number of arguments
 		throw(ArgNumExeption, NULL);
@@ -55,6 +52,13 @@ int main(int argc, char** argv)
 	if (inputPrecision <= 0.0)
 	{
 		throw(PrecisionException, NULL);
+	}
+	
+	const int threadNum = atoi(argv[4]);
+	
+	if (threadNum <= 0)
+	{
+		throw(ThreadNumException, NULL);
 	}
 	
 	// Read input array
@@ -93,35 +97,56 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
-{	
-	// TODO: Add parallel checking
 
-	int dim = new->dim;
 
-	// Iterate over inner rows
-	for (int i = 1; i < dim - 1; i++)
-	{
-		// Iterate over inner coloumns
-		for (int j = 1; j < dim - 1; j++)
-		{
-			// If we find an entry that is not within precision
-			// then it is different
-			double diff = 
-				fabs(old->array[i * dim + j] - new->array[i * dim + j]);
-			
-			if (diff > -precision && diff < precision)
-			{
-				return 1;
-			}
-		}
-	}
+/*
+--------- Array data structure -------------------------------------------------
+*/
+
+// Duplicate a square matrix
+// Takes a pointer to a square matrix and returns another to a copy
+// of the matrix
+SquareMatrix* duplicateMatrix(SquareMatrix* old)
+{
+	// Create new square matrix
+	SquareMatrix* new = malloc(sizeof(SquareMatrix));
 	
-	// Else all are within spec
-	return 0;
+	// Allocate space for array
+	new->array = calloc(sizeof(double), (size_t)(old->dim * old->dim));
+	
+	// Copy array to new array
+	memcpy(
+		new->array, 
+		old->array, 
+		sizeof(double) * (size_t)(old->dim * old->dim));
+	
+	// Copy dims
+	new->dim = old->dim;
+	
+	return new;
 }
 
+// Free SquareMatrix from memory
+void freeMatrix(SquareMatrix* matrix)
+{
+	free(matrix->array);
+	free(matrix);
+}
 
+// Create a new square matrix of certain dimension
+SquareMatrix* newMatrix(int dim)
+{
+	if (dim <= 0)
+	{
+		throw(DimensionException, NULL);
+	}
+	
+	SquareMatrix* matrix = malloc(sizeof(SquareMatrix));
+	matrix->array = calloc(sizeof(double), (size_t)(dim * dim));
+	matrix->dim = dim;		
+	
+	return matrix;
+}
 
 /*
 ----- File read and write ------------------------------------------------------
@@ -214,59 +239,39 @@ void printMatrix(SquareMatrix* matrix)
 	}
 }
 
-/*
---------- Array data structure -------------------------------------------------
-*/
-
-// Duplicate a square matrix
-// Takes a pointer to a square matrix and returns another to a copy
-// of the matrix
-SquareMatrix* duplicateMatrix(SquareMatrix* old)
-{
-	// Create new square matrix
-	SquareMatrix* new = malloc(sizeof(SquareMatrix));
-	
-	// Allocate space for array
-	new->array = calloc(sizeof(double), (size_t)(old->dim * old->dim));
-	
-	// Copy array to new array
-	memcpy(
-		new->array, 
-		old->array, 
-		sizeof(double) * (size_t)(old->dim * old->dim));
-	
-	// Copy dims
-	new->dim = old->dim;
-	
-	return new;
-}
-
-// Free SquareMatrix from memory
-void freeMatrix(SquareMatrix* matrix)
-{
-	free(matrix->array);
-	free(matrix);
-}
-
-// Create a new square matrix of certain dimension
-SquareMatrix* newMatrix(int dim)
-{
-	if (dim <= 0)
-	{
-		throw(DimensionException, NULL);
-	}
-	
-	SquareMatrix* matrix = malloc(sizeof(SquareMatrix));
-	matrix->array = calloc(sizeof(double), (size_t)(dim * dim));
-	matrix->dim = dim;		
-	
-	return matrix;
-}
 
 /*
 ---- Implementations -----------------------------------------------------------
 */
 
+
+int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
+{	
+	// TODO: Add parallel checking
+
+	int dim = new->dim;
+
+	// Iterate over inner rows
+	for (int i = 1; i < dim - 1; i++)
+	{
+		// Iterate over inner coloumns
+		for (int j = 1; j < dim - 1; j++)
+		{
+			// If we find an entry that is not within precision
+			// then it is different
+			double diff = 
+				fabs(old->array[i * dim + j] - new->array[i * dim + j]);
+			
+			if (diff > -precision && diff < precision)
+			{
+				return 1;
+			}
+		}
+	}
+	
+	// Else all are within spec
+	return 0;
+}
 
 // Non-parallel implementation
 // Takes in the dimension of the square array,
@@ -406,6 +411,10 @@ void throw(Error e, char** args)
 			
 		case DimensionException:
 			printf("Error: Given dimension is too small.\n");
+			break;
+			
+		case ThreadNumException:
+			printf("Error: Given thread number is too small.\n");
 			break;
 	}
 	
