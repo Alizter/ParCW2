@@ -22,7 +22,7 @@ SquareMatrix* newMatrix(int dim);
 // File read and write
 
 SquareMatrix* readMatrix(int dim, char* fileName);
-void printMatrix(SquareMatrix* matrix);
+void printMatrix(SquareMatrix* matrix, int colour);
 
 
 
@@ -56,8 +56,7 @@ typedef struct
 typedef enum
 {
 	FileException = -1,	 	// Program couldn't read file
-	DimParse = -2, 			// Program couldn't parse dimension
-	ArgNumExeption = -3,	// Program has wrong number of arguents
+	ArgNumException = -3,	// Program has wrong number of arguents
 	ArrayReadFailure = -4,	// Program couldn't read array
 	PrecisionException = -5,// Program precision too small
 	DimensionException = -6,// Program dimension too small

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
+#include <unistd.h>
+
 
 #include "main.h"
 
@@ -28,45 +30,80 @@
 // Program takes in dim, fileName and precision
 int main(int argc, char** argv)
 {
-	if (argc != 5)
+	// Default values
+	int dim = 5;
+	double inputPrecision = 1E-3;
+	int threadNum = 4;
+	int colour = 0;
+
+	// Command line options
+	int c;	
+	while ((c = getopt(argc, argv, "cd:p:t:")) != -1)
 	{
-		// We do not have the right number of arguments
-		throw(ArgNumExeption, NULL);
+		switch(c)
+		{			
+			case 'd': // dimension argument
+			{
+				dim = atoi(optarg);
+				
+				if (dim <= 0)
+				{
+					throw(DimensionException, NULL);
+				}
+				
+				break;
+			}
+			case 'p': // precision argument
+			{
+				inputPrecision = strtod(optarg, NULL);
+	
+				// If our precision is too small, our program may never stop
+				if (inputPrecision <= 0.0)
+				{
+					throw(PrecisionException, NULL);
+				}
+				
+				break;
+			}
+			case 't': // thread number argument
+			{
+				threadNum = atoi(optarg);
+	
+				if (threadNum <= 0)
+				{
+					throw(ThreadNumException, NULL);
+				}
+				
+				break;
+			}
+			case 'c': // colour enabled
+			{
+				colour = 1;
+				break;
+			}
+		}
 	}
 	
-	// Inputted dimension
-	const int dim = atoi(argv[1]);
+	// Reading non-optional arguments
 	
-	if (dim <= 0)
+	// If the total number of arguments isn't the number of optional arguments
+	// plus the number of non-optional arguments, then we have a problem.
+	if (argc != 1 + optind)
 	{
-		throw(DimensionException, NULL);
+		throw(ArgNumException, NULL);
 	}
 	
-	// File name for array
-	char* fileName = argv[2];
+	// Get file name and increment pointer for next args if needed
+	char* fileName = argv[optind++];
 	
-	// Read precision
-	const double inputPrecision = strtod(argv[3], NULL);
-	
-	// If our precision is too small, our program may never stop
-	if (inputPrecision <= 0.0)
-	{
-		throw(PrecisionException, NULL);
-	}
-	
-	const int threadNum = atoi(argv[4]);
-	
-	if (threadNum <= 0)
-	{
-		throw(ThreadNumException, NULL);
-	}
+	// Argument reading finished, file reading begins
 	
 	// Read input array
 	SquareMatrix* inputArray = readMatrix(dim, fileName);
 	
 	// Print input array
 	printf("Input array:\n");	
-	printMatrix(inputArray);
+	printMatrix(inputArray, colour);
 	printf("\n");
 	
 	// New and old matricies
@@ -90,11 +127,11 @@ int main(int argc, char** argv)
 	
 	// Print new array
 	printf("Result:\n");
-	printMatrix(new);
+	printMatrix(new, colour);
 	
 	// Exit the program Successfully
 	printf("Program finished.");
-	return 0;
+	exit(0);
 }
 
 
@@ -233,48 +270,47 @@ typedef struct
 
 // Takes a float and gives rgb values for rainbow colouring (basically
 // an inferior hsv -> rgb converter)
-RGB* rgbRainbow(double x)
+RGB rgbRainbow(double x)
 {
-	//Small scalling factor
-	x *= 0.2;
+	//Small scalling factor for colouring
+	x *= 0.1;
 
-    RGB* rgb = malloc(sizeof(rgb));
+    RGB rgb;
 
     int section = (int)(x * 6);
-    double frac = (x * 6) - ((long)(x * 6));
+    double frac = (x * 6) - (double)((long)(x * 6));
 
-	switch (section)
+	switch (section % 6)
 	{
 		case 0:
-		case 6:
-			rgb->r = 255;
-			rgb->g = (int)(255 * frac);
-			rgb->b = 0;
+			rgb.r = 255;
+			rgb.g = (int)(255 * frac);
+			rgb.b = 0;
 			break;
 		case 1:
-			rgb->r = (int)(255 * (1.0 - frac));
-			rgb->g = 255;
-			rgb->b = 0;
+			rgb.r = (int)(255 * (1.0 - frac));
+			rgb.g = 255;
+			rgb.b = 0;
 			break;
 		case 2:
-			rgb->r = 0;
-			rgb->g = 255;
-			rgb->b = (int)(255 * frac);
+			rgb.r = 0;
+			rgb.g = 255;
+			rgb.b = (int)(255 * frac);
 			break;
 		case 3:
-			rgb->r = 0;
-			rgb->g = (int)(255 * (1.0 - frac));
-			rgb->b = 255;
+			rgb.r = 0;
+			rgb.g = (int)(255 * (1.0 - frac));
+			rgb.b = 255;
 			break;
 		case 4:
-			rgb->r = (int)(255 * frac);
-			rgb->g = 0;
-			rgb->b = 255;
+			rgb.r = (int)(255 * frac);
+			rgb.g = 0;
+			rgb.b = 255;
 			break;
 		case 5:
-			rgb->r = 255;
-			rgb->g = 0;
-			rgb->b = (int)(255 * (1.0 - frac));
+			rgb.r = 255;
+			rgb.g = 0;
+			rgb.b = (int)(255 * (1.0 - frac));
 			break;
 	}
 	
@@ -282,20 +318,27 @@ RGB* rgbRainbow(double x)
 }
 
 // Prints the given matrix
-void printMatrix(SquareMatrix* matrix)
+void printMatrix(SquareMatrix* matrix, int colour)
 {
 	for (int i = 0; i < matrix->dim; i++)
 	{
 		for (int j = 0; j < matrix->dim; j++)
-		{
-			// We colour them based on their value
-			// Really only works on doubles between 0.0 and 1.0
-			RGB* rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
-			
-			printf(
-				"\033[38;2;%d;%d;%dm%f\x1b[0m ", 
-				rgb->r, rgb->g,rgb->b, matrix->array[i * (matrix->dim) + j]);
-			
+		{	
+			if (colour)
+			{
+				// We colour them based on their value
+				// Really only works on doubles between 0.0 and 1.0
+				RGB rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
+				
+				printf(
+					"\033[38;2;%d;%d;%dm%f\x1b[0m ", 
+					rgb.r, rgb.g, rgb.b, 
+					matrix->array[i * (matrix->dim) + j]);
+			}
+			else // We have decided a boring and monochrome output
+			{
+				printf("%f ", matrix->array[i * (matrix->dim) + j]);
+			}
 		}
 		
 		printf("\n");
@@ -455,12 +498,8 @@ void throw(Error e, char** args)
 		case FileException:
 			printf("Error: Could not read file: %s\n", args[0]);
 			break;
-		
-		case DimParse:
-			printf("Error: Could not parse dimension given.\n");
-			break;
-		
-		case ArgNumExeption:
+	
+		case ArgNumException:
 			printf("Error: Incorrect number of arguments given.\n");
 			break;
 		
