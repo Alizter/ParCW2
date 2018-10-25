@@ -225,6 +225,62 @@ SquareMatrix* readMatrix(int dim, char* fileName)
 	return matrix;
 }
 
+// Small sruct for passing around rgb values
+typedef struct
+{
+	int r,g,b;
+} RGB;
+
+// Takes a float and gives rgb values for rainbow colouring (basically
+// an inferior hsv -> rgb converter)
+RGB* rgbRainbow(double x)
+{
+	//Small scalling factor
+	x *= 0.2;
+
+    RGB* rgb = malloc(sizeof(rgb));
+
+    int section = (int)(x * 6);
+    double frac = (x * 6) - ((long)(x * 6));
+
+	switch (section)
+	{
+		case 0:
+		case 6:
+			rgb->r = 255;
+			rgb->g = (int)(255 * frac);
+			rgb->b = 0;
+			break;
+		case 1:
+			rgb->r = (int)(255 * (1.0 - frac));
+			rgb->g = 255;
+			rgb->b = 0;
+			break;
+		case 2:
+			rgb->r = 0;
+			rgb->g = 255;
+			rgb->b = (int)(255 * frac);
+			break;
+		case 3:
+			rgb->r = 0;
+			rgb->g = (int)(255 * (1.0 - frac));
+			rgb->b = 255;
+			break;
+		case 4:
+			rgb->r = (int)(255 * frac);
+			rgb->g = 0;
+			rgb->b = 255;
+			break;
+		case 5:
+			rgb->r = 255;
+			rgb->g = 0;
+			rgb->b = (int)(255 * (1.0 - frac));
+			break;
+	}
+	
+	return rgb;
+}
+
 // Prints the given matrix
 void printMatrix(SquareMatrix* matrix)
 {
@@ -232,7 +288,14 @@ void printMatrix(SquareMatrix* matrix)
 	{
 		for (int j = 0; j < matrix->dim; j++)
 		{
-			printf("%f ", matrix->array[i * (matrix->dim) + j]);
+			// We colour them based on their value
+			// Really only works on doubles between 0.0 and 1.0
+			RGB* rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
+			
+			printf(
+				"\033[38;2;%d;%d;%dm%f\x1b[0m ", 
+				rgb->r, rgb->g,rgb->b, matrix->array[i * (matrix->dim) + j]);
+			
 		}
 		
 		printf("\n");
