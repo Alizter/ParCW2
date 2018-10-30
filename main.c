@@ -111,19 +111,9 @@ int main(int argc, char** argv)
 	SquareMatrix* old;
 	SquareMatrix* new = duplicateMatrix(inputArray);
 		
-	do
-	{
-		// Copy value of new to old
-		old = duplicateMatrix(new);
-		
-		//iterate once on old saving to new
-		naiveIterate(old, new);
-	//	parIterate(dim, old, new, threadNum);
-		
-	}
-	// loop if old and new are too different
-	while (isDiff(inputPrecision, new, old));
-	
+	// Compute new values
+	//naiveIterate(&old, &new, inputPrecision);
+	parIterate(&old, &new, inputPrecision, threadNum);
 	
 	// Print new array
 	printf("Result:\n");
@@ -383,30 +373,234 @@ int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
 // Takes in the dimension of the square array,
 // the old array, and the new arrays location
 // then returns nothing, having modified the new array.
-void naiveIterate(SquareMatrix* old, SquareMatrix* new)
+void naiveIterate(SquareMatrix** pOld, SquareMatrix** pNew, double prec)
 {
-	//By iterating over the inner rows,
-	//we do not affect the boundary.
+	SquareMatrix* old = *pOld;
+	SquareMatrix* new = *pNew;
 	
-	int dim = old->dim;
-	
-	// Iterate over inner rows
-	for (int i = 1; i < dim - 1; i++)
+	do
 	{
-		// Iterate over inner coloumns
-		for (int j = 1; j < dim - 1; j++)
+		// Copy value of new to old
+		old = duplicateMatrix(new);
+
+		//By iterating over the inner rows,
+		//we do not affect the boundary.
+		
+		int dim = old->dim;
+		
+		// Iterate over inner rows
+		for (int i = 1; i < dim - 1; i++)
 		{
-			// The corresponding entry of
-			// the new array is the average
-			// of it's neighbours in the old
-			new->array[i * dim + j] = 0.25 * (
-				old->array[(i + 1) * dim + j] + 
-				old->array[(i - 1) * dim + j] + 
-				old->array[i * dim + j + 1] + 
-				old->array[i * dim + j - 1]);
+			// Iterate over inner coloumns
+			for (int j = 1; j < dim - 1; j++)
+			{
+				// The corresponding entry of
+				// the new array is the average
+				// of it's neighbours in the old
+				new->array[i * dim + j] = 0.25 * (
+					old->array[(i + 1) * dim + j] + 
+					old->array[(i - 1) * dim + j] + 
+					old->array[i * dim + j + 1] + 
+					old->array[i * dim + j - 1]);
+			}
 		}
 	}
+	// loop if old and new are too different
+	while (isDiff(prec, new, old));
 }
+
+
+// Job data structure
+typedef struct
+{
+	int jobType; 		// The type of job
+	int threadID; 		// The thread assigned
+	int i; 				// the i value
+	int j; 				// the j value
+	SquareMatrix* old; 	// a pointer to the old matrix
+	SquareMatrix* new; 	// a pointer to the new matrix
+} Job;
+
+// Data structure that gets passed
+typedef struct
+{
+	int  threadID; // the id of the thread
+	int* cancelFlag; // a flag for cancelation
+	Job* jobs; // a pointer to the jobs
+	int  jobCount; // the number of jobs
+	double prec; 		// The precision of differences
+} ThreadArgs;
+
+// Parellel version of iterate
+void parIterate(
+	SquareMatrix** pOld, 
+	SquareMatrix** pNew, 
+	double prec, int threadNum)
+{
+	SquareMatrix* old = *pOld;
+	SquareMatrix* new = *pNew;
+	int dim = old->dim;
+
+	// Create a job queue
+	int jobCount = (dim - 2) * (dim - 2);
+	
+	Job jobs[jobCount];
+	
+	// Now that our jobs have been created we create thereads and run them
+	pthread_t threads[threadNum];
+	
+	
+	// Cancel flag
+	int cancelFlag = 0;
+	
+	while (!cancelFlag)
+	{
+		// Copy value of new to old
+		old = duplicateMatrix(new);
+		
+		// Create jobs
+		for (int i = 1; i < dim - 1; i++)
+		{
+			for (int j = 1; j < dim - 1; j++)
+			{
+				jobs[i * dim + j].jobType = 0; // Averaging job
+				jobs[i * dim + j].threadID = 
+					((i - 1) * dim + j - 1) % threadNum;
+				jobs[i * dim + j].i = i;
+				jobs[i * dim + j].j = j;
+				jobs[i * dim + j].old = old;
+				jobs[i * dim + j].new = new;
+			}
+		}
+		
+		
+		
+		// Create (and run) pthreads
+		for (int threadID = 0; threadID < threadNum; threadID++)
+		{
+			//Thread arguments
+			ThreadArgs* threadArgs = malloc(sizeof(ThreadArgs));
+			threadArgs->threadID 	= threadID;
+			threadArgs->cancelFlag 	= &cancelFlag;
+			threadArgs->jobs 		= jobs;
+			threadArgs->jobCount 	= jobCount;
+			threadArgs->prec 		= prec;
+			
+			// Create thread
+			pthread_create(
+				threads + threadID, 
+				NULL, 
+				threadWork, 
+				(void*)threadArgs);
+		}
+		
+		// Wait for threads
+		for (int i = 0; i < threadNum; i++)
+		{
+			pthread_join(threads[i], NULL);
+		}
+		
+	
+		// Create jobs for precision checking
+		// Create jobs
+		for (int i = 1; i < dim - 1; i++)
+		{
+			for (int j = 1; j < dim - 1; j++)
+			{
+				jobs[i * dim + j].jobType = 1; // precision job
+				jobs[i * dim + j].threadID = 
+					((i - 1) * dim + j - 1) % threadNum;
+				jobs[i * dim + j].i = i;
+				jobs[i * dim + j].j = j;
+				jobs[i * dim + j].old = old;
+				jobs[i * dim + j].new = new;
+			}
+		}
+		
+		// Create (and run) pthreads checking precision
+		for (int threadID = 0; threadID < threadNum; threadID++)
+		{
+			//Thread arguments
+			ThreadArgs* threadArgs = malloc(sizeof(ThreadArgs));
+			threadArgs->threadID 	= threadID;
+			threadArgs->cancelFlag 	= &cancelFlag;
+			threadArgs->jobs 		= jobs;
+			threadArgs->jobCount 	= jobCount;
+			threadArgs->prec 		= prec;
+			
+			// Create thread
+			pthread_create(
+				threads + threadID, 
+				NULL, 
+				threadWork, 
+				(void*)threadArgs);
+		}		
+	}
+}
+
+// The work that each thread has to do
+void* threadWork(void* args)
+{
+	ThreadArgs* targs = (ThreadArgs*)args;
+		
+	// Go through each job
+	for (int k = 0; k < targs->jobCount; k++)
+	{
+		// If this job is for us
+		if ((targs->jobs + k)->threadID == targs->threadID)
+		{
+			// A jobtype of 0 means we are averaging
+			if ((targs->jobs + k)->jobType == 0)
+			{
+				// Take average of neighbouring values in old
+				// and put into new
+				int i = (targs->jobs + k)->i;
+				int j = (targs->jobs + k)->j;
+				int dim = (targs->jobs + k)->old->dim;
+				double* arr = (targs->jobs + k)->old->array;
+			
+				(targs->jobs + k)->new->array[i * dim + j] = 0.25 * (
+					arr[(i + 1) * dim + j] + 
+					arr[(i - 1) * dim + j] + 
+					arr[i * dim + j + 1] + 
+					arr[i * dim + j - 1]);
+			}
+			// Otherwise we are checking the difference between old and new
+			else
+			{
+				// Another thread may have found exceptional precision
+				// thus we shouldn't bother checking
+				if (*(targs->cancelFlag))
+				{
+					return 0;
+				}
+				
+				// Calculate the difference of entries between old and new at
+				// (i,j) entry
+				
+				int i = (targs->jobs + k)->i;
+				int j = (targs->jobs + k)->j;
+				int dim = (targs->jobs + k)->old->dim;
+			
+				double diff = 
+					(targs->jobs + k)->old->array[i * dim + j] 
+					- (targs->jobs + k)->new->array[i * dim + j];
+			
+				// If we find an entry that is not within precision
+				// then it is different
+				if (diff > -targs->prec && diff < targs->prec)
+				{
+					// We let the other threads know they should cancel
+					(*(targs->cancelFlag))++;
+					return 0;
+				}
+			}
+		}
+	}
+	
+	return 0;
+}
+
 /*
 // Parallel implementation
 // Complete nonsense doesn't work
