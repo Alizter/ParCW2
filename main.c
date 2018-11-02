@@ -15,9 +15,9 @@
 /*
 	Contents:
 		* Main program
+		* Implementations (this is the bit with parallel stuff) 
 		* Array data structure	
 		* File read and write
-		* Implementations (this is the bit with parallel stuff) 
 		* Error handling
 */
 
@@ -126,214 +126,6 @@ int main(int argc, char** argv)
 
 
 
-/*
---------- Array data structure -------------------------------------------------
-*/
-
-// Duplicate a square matrix
-// Takes a pointer to a square matrix and returns another to a copy
-// of the matrix
-SquareMatrix* duplicateMatrix(SquareMatrix* old)
-{
-	// Create new square matrix
-	SquareMatrix* new = malloc(sizeof(SquareMatrix));
-	
-	// Allocate space for array
-	new->array = calloc(sizeof(double), (size_t)(old->dim * old->dim));
-	
-	// Copy array to new array
-	memcpy(
-		new->array, 
-		old->array, 
-		sizeof(double) * (size_t)(old->dim * old->dim));
-	
-	// Copy dims
-	new->dim = old->dim;
-	
-	return new;
-}
-
-// Free SquareMatrix from memory
-void freeMatrix(SquareMatrix* matrix)
-{
-	free(matrix->array);
-	free(matrix);
-}
-
-// Create a new square matrix of certain dimension
-SquareMatrix* newMatrix(int dim)
-{
-	if (dim <= 0)
-	{
-		throw(DimensionException, NULL);
-	}
-	
-	SquareMatrix* matrix = malloc(sizeof(SquareMatrix));
-	matrix->array = calloc(sizeof(double), (size_t)(dim * dim));
-	matrix->dim = dim;		
-	
-	return matrix;
-}
-
-/*
------ File read and write ------------------------------------------------------
-	
-	Here we add functionality for reading and writing of files. That way a text
-	file with a list of numbers (doubles) seperated by commas  (or any other 
-	deliminator) can be read, and a number providing the details of the
-	dimension can be given. This will allow the progam to read a matrix.
-*/
-
-// Given a file name and a dimension reads (dim * dim) double values from given
-// file and returns a pointer to a matrix with said values. If the file does
-// not have enough values it simply makes them zero.
-// Obviously if there are too many values it doesn't read them
-SquareMatrix* readMatrix(int dim, char* fileName)
-{
-	
-	FILE* file = fopen(fileName, "r");
-	
-	char* buffer;
-	long fileLength;
-	
-	if (file)
-	{
-		fseek(file, 0, SEEK_END);
-		fileLength = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		
-		buffer = malloc((size_t)fileLength);
-		
-		if (buffer)
-		{
-			fread(buffer, 1, (size_t)fileLength, file);
-		}
-		else
-		{
-			// Could not read array so throw error
-			throw(ArrayReadFailure, NULL);
-		}
-		
-		fclose(file);
-	}
-	else
-	{
-		// Could not read file so throw error
-		char* args[1] = { fileName };
-		throw(FileException, args);
-	}
-	
-	
-	// Create a new matrix to populate
-	SquareMatrix* matrix = newMatrix(dim);
-	
-	// Starting pointer
-	char* pStart = buffer;
-	
-	// End pointer (for strtod)
-	char* pEnd;
-	
-	// Number of elements read
-	int count = 0;
-	
-	// While the starting pointer is less than the buffer pointer
-	// plus the length of the buffer (i.e. when still in the buffer)
-	// AND the count is less than expected number of entries
-	while (pStart < (buffer + fileLength) && count < (dim * dim))
-	{
-		// The "count"th entry is the next readable double 
-		matrix->array[count] = strtod(pStart, &pEnd);
-		// Increment number of elements read
-		++count;
-		// We wish to skip commas (or any deliminator really)
-		pStart = pEnd + 1;
-	}
-	
-	return matrix;
-}
-
-// Small sruct for passing around rgb values
-typedef struct
-{
-	int r,g,b;
-} RGB;
-
-// Takes a float and gives rgb values for rainbow colouring (basically
-// an inferior hsv -> rgb converter)
-RGB rgbRainbow(double x)
-{
-	//Small scalling factor for colouring
-	x *= 0.1;
-
-    RGB rgb;
-
-    int section = (int)(x * 6);
-    double frac = (x * 6) - (double)((long)(x * 6));
-
-	switch (section % 6)
-	{
-		case 0:
-			rgb.r = 255;
-			rgb.g = (int)(255 * frac);
-			rgb.b = 0;
-			break;
-		case 1:
-			rgb.r = (int)(255 * (1.0 - frac));
-			rgb.g = 255;
-			rgb.b = 0;
-			break;
-		case 2:
-			rgb.r = 0;
-			rgb.g = 255;
-			rgb.b = (int)(255 * frac);
-			break;
-		case 3:
-			rgb.r = 0;
-			rgb.g = (int)(255 * (1.0 - frac));
-			rgb.b = 255;
-			break;
-		case 4:
-			rgb.r = (int)(255 * frac);
-			rgb.g = 0;
-			rgb.b = 255;
-			break;
-		case 5:
-			rgb.r = 255;
-			rgb.g = 0;
-			rgb.b = (int)(255 * (1.0 - frac));
-			break;
-	}
-	
-	return rgb;
-}
-
-// Prints the given matrix
-void printMatrix(SquareMatrix* matrix, int colour)
-{
-	for (int i = 0; i < matrix->dim; i++)
-	{
-		for (int j = 0; j < matrix->dim; j++)
-		{	
-			if (colour)
-			{
-				// We colour them based on their value
-				// Really only works on doubles between 0.0 and 1.0
-				RGB rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
-				
-				printf(
-					"\033[38;2;%d;%d;%dm%f\x1b[0m ", 
-					rgb.r, rgb.g, rgb.b, 
-					matrix->array[i * (matrix->dim) + j]);
-			}
-			else // We have decided a boring and monochrome output
-			{
-				printf("%f ", matrix->array[i * (matrix->dim) + j]);
-			}
-		}
-		
-		printf("\n");
-	}
-}
 
 
 /*
@@ -424,12 +216,28 @@ typedef struct
 // Data structure that gets passed
 typedef struct
 {
-	int  threadID; // the id of the thread
-	int* cancelFlag; // a flag for cancelation
-	Job* jobs; // a pointer to the jobs
-	int  jobCount; // the number of jobs
+	int* iterWait;		// wait flag for each iteration
+	int  threadID;		// the id of the thread
+	int* cancelFlag; 	// a flag for cancelation
+	Job* jobs; 			// a pointer to the jobs
+	int  jobCount; 		// the number of jobs
 	double prec; 		// The precision of differences
 } ThreadArgs;
+
+
+void parIterate2(
+	SquareMatrix** pOld,
+	SquareMatrix** pNew,
+	double prec, int threadNum)
+{
+	SquareMatrix* old = *pOld;
+	SquareMatrix* new = *pNew;
+	
+	// This is called the thread pool model
+}
+
+
+
 
 // Parellel version of iterate
 void parIterate(
@@ -437,6 +245,14 @@ void parIterate(
 	SquareMatrix** pNew, 
 	double prec, int threadNum)
 {
+	// Pseudo code
+	// create jobs
+	// create thread args
+	// create jobs 
+	
+	
+
+
 	SquareMatrix* old = *pOld;
 	SquareMatrix* new = *pNew;
 	int dim = old->dim;
@@ -449,9 +265,26 @@ void parIterate(
 	// Now that our jobs have been created we create thereads and run them
 	pthread_t threads[threadNum];
 	
-	
 	// Cancel flag
 	int cancelFlag = 0;
+	
+	// Create jobs
+	for (int i = 1; i < dim - 1; i++)
+	{
+		for (int j = 1; j < dim - 1; j++)
+		{
+			jobs[i * dim + j].jobType = 0; // Averaging job
+			jobs[i * dim + j].threadID = 
+				((i - 1) * dim + j - 1) % threadNum;
+			jobs[i * dim + j].i = i;
+			jobs[i * dim + j].j = j;
+			jobs[i * dim + j].old = old;
+			jobs[i * dim + j].new = new;
+		}
+	}
+	
+	
+	
 	
 	while (!cancelFlag)
 	{
@@ -678,6 +511,218 @@ void* paverage(void* packedArgs)
 	// Exiting safely
 	pthread_exit(0);
 }*/
+
+/*
+--------- Array data structure -------------------------------------------------
+*/
+
+// Duplicate a square matrix
+// Takes a pointer to a square matrix and returns another to a copy
+// of the matrix
+SquareMatrix* duplicateMatrix(SquareMatrix* old)
+{
+	// Create new square matrix
+	SquareMatrix* new = malloc(sizeof(SquareMatrix));
+	
+	// Allocate space for array
+	new->array = calloc(sizeof(double), (size_t)(old->dim * old->dim));
+	
+	// Copy array to new array
+	memcpy(
+		new->array, 
+		old->array, 
+		sizeof(double) * (size_t)(old->dim * old->dim));
+	
+	// Copy dims
+	new->dim = old->dim;
+
+	
+	return new;
+}
+
+// Free SquareMatrix from memory
+void freeMatrix(SquareMatrix* matrix)
+{
+	free(matrix->array);
+	free(matrix);
+}
+
+// Create a new square matrix of certain dimension
+SquareMatrix* newMatrix(int dim)
+{
+	if (dim <= 0)
+	{
+		throw(DimensionException, NULL);
+	}
+	
+	SquareMatrix* matrix = malloc(sizeof(SquareMatrix));
+	matrix->array = calloc(sizeof(double), (size_t)(dim * dim));
+	matrix->dim = dim;		
+	
+	return matrix;
+}
+
+/*
+----- File read and write ------------------------------------------------------
+	
+	Here we add functionality for reading and writing of files. That way a text
+	file with a list of numbers (doubles) seperated by commas  (or any other 
+	deliminator) can be read, and a number providing the details of the
+	dimension can be given. This will allow the progam to read a matrix.
+*/
+
+// Given a file name and a dimension reads (dim * dim) double values from given
+// file and returns a pointer to a matrix with said values. If the file does
+// not have enough values it simply makes them zero.
+// Obviously if there are too many values it doesn't read them
+SquareMatrix* readMatrix(int dim, char* fileName)
+{
+	
+	FILE* file = fopen(fileName, "r");
+	
+	char* buffer;
+	long fileLength;
+	
+	if (file)
+	{
+		fseek(file, 0, SEEK_END);
+		fileLength = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		
+		buffer = malloc((size_t)fileLength);
+		
+		if (buffer)
+		{
+			fread(buffer, 1, (size_t)fileLength, file);
+		}
+		else
+		{
+			// Could not read array so throw error
+			throw(ArrayReadFailure, NULL);
+		}
+		
+		fclose(file);
+	}
+	else
+	{
+		// Could not read file so throw error
+		char* args[1] = { fileName };
+		throw(FileException, args);
+	}
+	
+	
+	// Create a new matrix to populate
+	SquareMatrix* matrix = newMatrix(dim);
+	
+	// Starting pointer
+	char* pStart = buffer;
+	
+	// End pointer (for strtod)
+	char* pEnd;
+	
+	// Number of elements read
+	int count = 0;
+	
+	// While the starting pointer is less than the buffer pointer
+	// plus the length of the buffer (i.e. when still in the buffer)
+	// AND the count is less than expected number of entries
+	while (pStart < (buffer + fileLength) && count < (dim * dim))
+	{
+		// The "count"th entry is the next readable double 
+		matrix->array[count] = strtod(pStart, &pEnd);
+		// Increment number of elements read
+		++count;
+		// We wish to skip commas (or any deliminator really)
+		pStart = pEnd + 1;
+	}
+	
+	return matrix;
+}
+
+// Small sruct for passing around rgb values
+typedef struct
+{
+	int r,g,b;
+} RGB;
+
+// Takes a float and gives rgb values for rainbow colouring (basically
+// an inferior hsv -> rgb converter)
+RGB rgbRainbow(double x)
+{
+	//Small scalling factor for colouring
+	x *= 0.1;
+
+    RGB rgb;
+
+    int section = (int)(x * 6);
+    double frac = (x * 6) - (double)((long)(x * 6));
+
+	switch (section % 6)
+	{
+		case 0:
+			rgb.r = 255;
+			rgb.g = (int)(255 * frac);
+			rgb.b = 0;
+			break;
+		case 1:
+			rgb.r = (int)(255 * (1.0 - frac));
+			rgb.g = 255;
+			rgb.b = 0;
+			break;
+		case 2:
+			rgb.r = 0;
+			rgb.g = 255;
+			rgb.b = (int)(255 * frac);
+			break;
+		case 3:
+			rgb.r = 0;
+			rgb.g = (int)(255 * (1.0 - frac));
+			rgb.b = 255;
+			break;
+		case 4:
+			rgb.r = (int)(255 * frac);
+
+			rgb.g = 0;
+			rgb.b = 255;
+			break;
+		case 5:
+			rgb.r = 255;
+			rgb.g = 0;
+			rgb.b = (int)(255 * (1.0 - frac));
+			break;
+	}
+	
+	return rgb;
+}
+
+// Prints the given matrix
+void printMatrix(SquareMatrix* matrix, int colour)
+{
+	for (int i = 0; i < matrix->dim; i++)
+	{
+		for (int j = 0; j < matrix->dim; j++)
+		{	
+			if (colour)
+			{
+				// We colour them based on their value
+				// Really only works on doubles between 0.0 and 1.0
+				RGB rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
+				
+				printf(
+					"\033[38;2;%d;%d;%dm%f\x1b[0m ", 
+					rgb.r, rgb.g, rgb.b, 
+					matrix->array[i * (matrix->dim) + j]);
+			}
+			else // We have decided a boring and monochrome output
+			{
+				printf("%f ", matrix->array[i * (matrix->dim) + j]);
+			}
+		}
+		
+		printf("\n");
+	}
+}
+
 
 /*
 ----- Error handling -----------------------------------------------------------
