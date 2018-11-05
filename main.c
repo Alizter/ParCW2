@@ -174,7 +174,7 @@ int main(int argc, char** argv)
     }
     
     // Exit the program Successfully
-    printf("Program finished.");
+    printf("Program finished.\n");
     exit(0);
 }
 
