@@ -121,6 +121,7 @@ int main(int argc, char** argv)
         
         startTime = clock(); // Start
         
+        // TODO: memory leak here
         naiveIterate(old, new, inputPrecision);
         
         diff = clock() - startTime; // Finish
@@ -136,16 +137,12 @@ int main(int argc, char** argv)
         for (int i = 1; i <= thrNum; i++)
         {
             // Initialise matricies
-            freeMatrix(old);
-            freeMatrix(new);
-        
-            
             old = duplicateMatrix(inputArray);
             new = duplicateMatrix(inputArray);
             
             startTime = clock(); // Start
             
-            parIterate(old, new, inputPrecision, thrNum);
+            parIterate(old, new, inputPrecision, i);
             
             diff = clock() - startTime; // Finish
 
@@ -155,8 +152,6 @@ int main(int argc, char** argv)
                 
             freeMatrix(old);
             freeMatrix(new);
-                
-                
         }
     }
     else // Compute old and display

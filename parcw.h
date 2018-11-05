@@ -2,10 +2,6 @@
 #define MAIN_H_
 
 
-
-// Main program
-
-
 // Array data structure
 
 typedef struct
@@ -76,13 +72,11 @@ typedef struct
 int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
 void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec);
 
-void parIterate(
-    SquareMatrix* old, 
-    SquareMatrix* new, 
+void parIterate(SquareMatrix* old, SquareMatrix* new, 
     double prec, int threadNum);
 
 void* threadWork(void* args);
-
+void partitionBlocks(ThreadArgs *pargs, int thrNum, int dim);
 
 
 

@@ -67,3 +67,7 @@ See pdf attached.
  ```
     ./main -d 5 -p 1E-3 -t 2 array1
  ```
+ 
+## Unit testing
+ 
+ To 

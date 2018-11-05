@@ -78,6 +78,23 @@ void* worker(void* vargs)
     return 0;
 }
 
+// Gives start and end points of blocks for each thread
+// deciding how it will get partitioned
+void partitionBlocks(ThreadArgs* args, int thrNum, int dim)
+{
+    int size = dim * dim;
+    int chunkSize = (size / thrNum) + (size % thrNum) / thrNum;
+    
+    for (int i = 0; i < thrNum - 1; i++)
+    {
+        args[i].start = i * chunkSize;
+        args[i].end = (i + 1) * chunkSize;
+    }
+
+    args[thrNum - 1].start = (thrNum - 1) * chunkSize;
+    args[thrNum - 1].end = size;
+}
+
 // Parellel version of iterate
 void parIterate(SquareMatrix* old, SquareMatrix* new, 
     double prec, int thrNum)
@@ -112,17 +129,10 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
         // Assign master signaller
         args[i].signalMaster = master;
         
-        // Assign start and end points
-        args[i].start = i * ((dim * dim) / thrNum + 1);
-        args[i].end = (dim * dim) / thrNum + 1;
-        
     }
     
-    int size = dim * dim;
+    partitionBlocks(args, thrNum, dim);
     
-    // Fix trailing job (start and end) due to array size mismatch
-    args[thrNum - 1].start = (thrNum - 1) * (size / thrNum + 1);
-    args[thrNum - 1].end = size / thrNum + size % thrNum - thrNum + 1;
     
     // Create and run threads
     for (int i = 0; i < thrNum; i++)
