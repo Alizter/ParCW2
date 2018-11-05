@@ -123,7 +123,12 @@ int main(int argc, char** argv)
     
         // Naive iterate
         
+        
+        
         // Initialise matricies
+        freeMatrix(old);
+        freeMatrix(new);
+        
         old = duplicateMatrix(inputArray);
         new = duplicateMatrix(inputArray);
         
@@ -144,6 +149,10 @@ int main(int argc, char** argv)
         for (int i = 1; i <= thrNum; i++)
         {
             // Initialise matricies
+            freeMatrix(old);
+            freeMatrix(new);
+        
+            
             old = duplicateMatrix(inputArray);
             new = duplicateMatrix(inputArray);
             
@@ -156,6 +165,11 @@ int main(int argc, char** argv)
             micro = (diff * 10000000l / CLOCKS_PER_SEC);
             printf("Parallel iterate %d threads:\t%ld.%06ld seconds\n", 
                 i, micro / 10000000l, micro % 10000000l);
+                
+            freeMatrix(old);
+            freeMatrix(new);
+                
+                
         }
     }
     else // Compute old and display
@@ -392,16 +406,21 @@ int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
 // then returns nothing, having modified the new array.
 void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec)
 {    
+    SquareMatrix** pOld = &old;
+    SquareMatrix** pNew = &new;
+
     do
     {
     
-        // Copy value of new to old
-        old = duplicateMatrix(new);
+        // Shift new values into old
+        SquareMatrix** temp = pOld;
+        pOld = pNew;
+        pNew = temp;
 
         //By iterating over the inner rows,
         //we do not affect the boundary.
         
-        int dim = old->dim;
+        int dim = (*pOld)->dim;
         
         // Iterate over inner rows
         for (int i = 1; i < dim - 1; i++)
@@ -412,16 +431,16 @@ void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec)
                 // The corresponding entry of
                 // the new array is the average
                 // of it's neighbours in the old
-                new->array[i * dim + j] = 0.25 * (
-                    old->array[(i + 1) * dim + j] + 
-                    old->array[(i - 1) * dim + j] + 
-                    old->array[i * dim + j + 1] + 
-                    old->array[i * dim + j - 1]);
+                (*pNew)->array[i * dim + j] = 0.25 * (
+                    (*pOld)->array[(i + 1) * dim + j] + 
+                    (*pOld)->array[(i - 1) * dim + j] + 
+                    (*pOld)->array[i * dim + j + 1] + 
+                    (*pOld)->array[i * dim + j - 1]);
             }
         }
     }
     // loop if old and new are too different
-    while (isDiff(prec, new, old));
+    while (isDiff(prec, *pNew, *pOld));
 }
 
 
