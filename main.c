@@ -16,6 +16,7 @@
 	Contents:
 		* Main program
 		* Implementations (this is the bit with parallel stuff) 
+		* Signaller data structure
 		* Array data structure	
 		* File read and write
 		* Error handling
@@ -25,15 +26,13 @@
 --------- Main program ---------------------------------------------------------
 */
 
-
-
 // Program takes in dim, fileName and precision
 int main(int argc, char** argv)
 {
 	// Default values
 	int dim = 5;
 	double inputPrecision = 1E-3;
-	int threadNum = 4;
+	int thrNum = 4;
 	int colour = 0;
 
 	// Command line options
@@ -67,9 +66,9 @@ int main(int argc, char** argv)
 			}
 			case 't': // thread number argument
 			{
-				threadNum = atoi(optarg);
+				thrNum = atoi(optarg);
 	
-				if (threadNum <= 0)
+				if (thrNum <= 0)
 				{
 					throw(ThreadNumException, NULL);
 				}
@@ -108,12 +107,11 @@ int main(int argc, char** argv)
 	
 	// New and old matricies
 	// New would be calculated from old
-	SquareMatrix* old;
+	SquareMatrix* old = duplicateMatrix(inputArray);
 	SquareMatrix* new = duplicateMatrix(inputArray);
 		
 	// Compute new values
-	//naiveIterate(&old, &new, inputPrecision);
-	parIterate(&old, &new, inputPrecision, threadNum);
+	parIterate(old, new, inputPrecision, thrNum);
 	
 	// Print new array
 	printf("Result:\n");
@@ -132,385 +130,257 @@ int main(int argc, char** argv)
 ---- Implementations -----------------------------------------------------------
 */
 
-
-int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
-{	
-	// TODO: Add parallel checking
-
-	int dim = new->dim;
-
-	// Iterate over inner rows
-	for (int i = 1; i < dim - 1; i++)
-	{
-		// Iterate over inner coloumns
-		for (int j = 1; j < dim - 1; j++)
-		{
-			// If we find an entry that is not within precision
-			// then it is different
-			double diff = 
-				fabs(old->array[i * dim + j] - new->array[i * dim + j]);
-			
-			if (diff > -precision && diff < precision)
-			{
-				return 1;
-			}
-		}
-	}
-	
-	// Else all are within spec
-	return 0;
-}
-
-// Non-parallel implementation
-// Takes in the dimension of the square array,
-// the old array, and the new arrays location
-// then returns nothing, having modified the new array.
-void naiveIterate(SquareMatrix** pOld, SquareMatrix** pNew, double prec)
-{
-	SquareMatrix* old = *pOld;
-	SquareMatrix* new = *pNew;
-	
-	do
-	{
-		// Copy value of new to old
-		old = duplicateMatrix(new);
-
-		//By iterating over the inner rows,
-		//we do not affect the boundary.
-		
-		int dim = old->dim;
-		
-		// Iterate over inner rows
-		for (int i = 1; i < dim - 1; i++)
-		{
-			// Iterate over inner coloumns
-			for (int j = 1; j < dim - 1; j++)
-			{
-				// The corresponding entry of
-				// the new array is the average
-				// of it's neighbours in the old
-				new->array[i * dim + j] = 0.25 * (
-					old->array[(i + 1) * dim + j] + 
-					old->array[(i - 1) * dim + j] + 
-					old->array[i * dim + j + 1] + 
-					old->array[i * dim + j - 1]);
-			}
-		}
-	}
-	// loop if old and new are too different
-	while (isDiff(prec, new, old));
-}
-
-
-// Job data structure
+// Data structure that gets passed to thread
 typedef struct
 {
-	int jobType; 		// The type of job
-	int threadID; 		// The thread assigned
-	int i; 				// the i value
-	int j; 				// the j value
-	SquareMatrix* old; 	// a pointer to the old matrix
-	SquareMatrix* new; 	// a pointer to the new matrix
-} Job;
-
-// Data structure that gets passed
-typedef struct
-{
-	int* iterWait;		// wait flag for each iteration
-	int  threadID;		// the id of the thread
-	int* cancelFlag; 	// a flag for cancelation
-	Job* jobs; 			// a pointer to the jobs
-	int  jobCount; 		// the number of jobs
-	double prec; 		// The precision of differences
+	int start;                  //  Start point of partition
+	int end;                    //  end point of parition
+	
+	double* diff;               // The difference between the iteration
+	
+	int id;                     // Thread id
+    Signaller* signalWorker;    // Signaller of the worker
+    Signaller* signalMaster;    // Signaller of the master
+    int quit;                   // Quit/Abort flag
+    SquareMatrix** old;         // A pointer to a pointer to the old matrix
+	SquareMatrix** new;         // A pointer to a pointer to the new matrix
 } ThreadArgs;
 
+void* worker(void* vargs)
+{   
+    // Cast void args to ThreadArgs
+    ThreadArgs* args = (ThreadArgs*)vargs;
 
-void parIterate2(
-	SquareMatrix** pOld,
-	SquareMatrix** pNew,
-	double prec, int threadNum)
-{
-	SquareMatrix* old = *pOld;
-	SquareMatrix* new = *pNew;
-	
-	// This is called the thread pool model
+    // get dimension
+    int dim = (*args->old)->dim;
+    
+    while (!args->quit)
+    {
+        waitFor(args->signalWorker);
+        
+        if (args->quit) break; // just in case break after wait
+        
+        double maxDiff = 0.0;
+    
+        for (int k = args->start; k < args->end; k++)
+        {
+            int i = k / dim;
+            int j = k % dim;
+        
+            // First make sure we are within the boundary
+            if (i > 0 && j > 0 && i < dim - 1 && j < dim - 1)
+            {
+                // Compute average of neighbours
+                (*args->new)->array[i * dim + j] = 0.25 * (
+                    (*args->old)->array[(i - 1) * dim + j] +
+                    (*args->old)->array[(i + 1) * dim + j] +
+                    (*args->old)->array[i * dim + j + 1] +
+                    (*args->old)->array[i * dim + j - 1]);
+
+                // Compute max diff
+                maxDiff = fmax(maxDiff, fabs(
+                    (*args->new)->array[k] - (*args->old)->array[k]));
+            }
+            else
+            {
+                // Throw boundary exception?
+            }
+        }
+        
+        // Set max diff
+        *(args->diff) = maxDiff;
+        
+        signal(args->signalMaster);
+    }
+    
+    return 0;
 }
-
-
-
 
 // Parellel version of iterate
-void parIterate(
-	SquareMatrix** pOld, 
-	SquareMatrix** pNew, 
-	double prec, int threadNum)
+void parIterate(SquareMatrix* old, SquareMatrix* new, 
+    double prec, int thrNum)
 {
-	// Pseudo code
-	// create jobs
-	// create thread args
-	// create jobs 
-	
-	
-
-
-	SquareMatrix* old = *pOld;
-	SquareMatrix* new = *pNew;
+    // For readability
 	int dim = old->dim;
 
-	// Create a job queue
-	int jobCount = (dim - 2) * (dim - 2);
+	// Allocate space for thread args
+	ThreadArgs args[thrNum];
 	
-	Job jobs[jobCount];
+	// Allocate space for threads
+	pthread_t threads[thrNum];
 	
-	// Now that our jobs have been created we create thereads and run them
-	pthread_t threads[threadNum];
-	
-	// Cancel flag
-	int cancelFlag = 0;
-	
-	// Create jobs
-	for (int i = 1; i < dim - 1; i++)
-	{
-		for (int j = 1; j < dim - 1; j++)
-		{
-			jobs[i * dim + j].jobType = 0; // Averaging job
-			jobs[i * dim + j].threadID = 
-				((i - 1) * dim + j - 1) % threadNum;
-			jobs[i * dim + j].i = i;
-			jobs[i * dim + j].j = j;
-			jobs[i * dim + j].old = old;
-			jobs[i * dim + j].new = new;
-		}
-	}
-	
-	
-	
-	
-	while (!cancelFlag)
-	{
-		// Copy value of new to old
-		old = duplicateMatrix(new);
-		
-		// Create jobs
-		for (int i = 1; i < dim - 1; i++)
-		{
-			for (int j = 1; j < dim - 1; j++)
-			{
-				jobs[i * dim + j].jobType = 0; // Averaging job
-				jobs[i * dim + j].threadID = 
-					((i - 1) * dim + j - 1) % threadNum;
-				jobs[i * dim + j].i = i;
-				jobs[i * dim + j].j = j;
-				jobs[i * dim + j].old = old;
-				jobs[i * dim + j].new = new;
-			}
-		}
-		
-		
-		
-		// Create (and run) pthreads
-		for (int threadID = 0; threadID < threadNum; threadID++)
-		{
-			//Thread arguments
-			ThreadArgs* threadArgs = malloc(sizeof(ThreadArgs));
-			threadArgs->threadID 	= threadID;
-			threadArgs->cancelFlag 	= &cancelFlag;
-			threadArgs->jobs 		= jobs;
-			threadArgs->jobCount 	= jobCount;
-			threadArgs->prec 		= prec;
-			
-			// Create thread
-			pthread_create(
-				threads + threadID, 
-				NULL, 
-				threadWork, 
-				(void*)threadArgs);
-		}
-		
-		// Wait for threads
-		for (int i = 0; i < threadNum; i++)
-		{
-			pthread_join(threads[i], NULL);
-		}
-		
-	
-		// Create jobs for precision checking
-		// Create jobs
-		for (int i = 1; i < dim - 1; i++)
-		{
-			for (int j = 1; j < dim - 1; j++)
-			{
-				jobs[i * dim + j].jobType = 1; // precision job
-				jobs[i * dim + j].threadID = 
-					((i - 1) * dim + j - 1) % threadNum;
-				jobs[i * dim + j].i = i;
-				jobs[i * dim + j].j = j;
-				jobs[i * dim + j].old = old;
-				jobs[i * dim + j].new = new;
-			}
-		}
-		
-		// Create (and run) pthreads checking precision
-		for (int threadID = 0; threadID < threadNum; threadID++)
-		{
-			//Thread arguments
-			ThreadArgs* threadArgs = malloc(sizeof(ThreadArgs));
-			threadArgs->threadID 	= threadID;
-			threadArgs->cancelFlag 	= &cancelFlag;
-			threadArgs->jobs 		= jobs;
-			threadArgs->jobCount 	= jobCount;
-			threadArgs->prec 		= prec;
-			
-			// Create thread
-			pthread_create(
-				threads + threadID, 
-				NULL, 
-				threadWork, 
-				(void*)threadArgs);
-		}		
-	}
+	// Master signaller
+    Signaller* master = newSignaller(thrNum);
+    
+    // Allocate space for max differences
+    double maxDiff[thrNum];
+    
+    // Populate args
+    for (int i = 0; i < thrNum; i++)
+    {
+        args[i].id = i;             // Assign thread id
+        args[i].diff = maxDiff + i; // Point diff to maxDiff
+        args[i].quit = 0;           // Don't quit
+        args[i].old = &old;         // old array
+        args[i].new = &new;         // new array
+        
+        // Assign new singaller for worker
+        args[i].signalWorker = newSignaller(1);
+        
+        // Assign master signaller
+        args[i].signalMaster = master;
+        
+        // Assign start and end points
+        args[i].start = i * ((dim * dim) / thrNum + 1);
+        args[i].end = (dim * dim) / thrNum + 1;
+        
+    }
+    
+    int size = dim * dim;
+    
+    // Fix trailing job (start and end) due to array size mismatch
+    args[thrNum - 1].start = (thrNum - 1) * (size / thrNum + 1);
+    args[thrNum - 1].end = size / thrNum + size % thrNum - thrNum + 1;
+    
+    // Create and run threads
+    for (int i = 0; i < thrNum; i++)
+    {
+        pthread_create(threads + i, NULL, worker, (void*)(args + i));
+    }
+    
+    int withinPrecision = 0;
+    
+    while (!withinPrecision)
+    {
+        // Swap pointers to matricies
+        // Essentially swapping old and new. Eliminates need to copy
+        SquareMatrix* temp = old;
+        old = new;
+        new = temp;
+    
+        // Signal all workers to begin
+        for (int i = 0; i < thrNum; i++)
+        {
+            signal(args[i].signalWorker);
+        }
+        
+        // Wait for all workers to signal (like a barrier)
+        waitFor(master);
+        
+        // Each worker has retururned their max difference
+        // We simply need to check they are all within precision
+        
+        // Pretend we are within precision at first
+        withinPrecision = 1;
+        
+        // Check each max_diff
+        for (int i = 0; i < thrNum; i++)
+        {
+            // if any are larger than prec
+            if (*(args[i].diff) > prec)
+            {
+                // then we are not within precision
+                withinPrecision = 0;
+                break;
+            }
+        }
+    }
+    
+    // After finishing we join up and clean up
+    
+    for (int i = 0; i < thrNum; i++)
+    {
+        // Set thread to quit
+        args[i].quit = 1;
+        // Signal worker to stop waiting
+        signal(args[i].signalWorker);
+        // Join thread
+        pthread_join(threads[i], NULL);
+        // Destroy associated signaller
+        destroySignaller(args[i].signalWorker);
+    }
+        
+    // destroy master signaller
+    destroySignaller(master);
 }
 
-// The work that each thread has to do
-void* threadWork(void* args)
+/* Signaller */
+
+// Constructor for the signaller
+Signaller* newSignaller(int targetValue)
 {
-	ThreadArgs* targs = (ThreadArgs*)args;
-		
-	// Go through each job
-	for (int k = 0; k < targs->jobCount; k++)
-	{
-		// If this job is for us
-		if ((targs->jobs + k)->threadID == targs->threadID)
-		{
-			// A jobtype of 0 means we are averaging
-			if ((targs->jobs + k)->jobType == 0)
-			{
-				// Take average of neighbouring values in old
-				// and put into new
-				int i = (targs->jobs + k)->i;
-				int j = (targs->jobs + k)->j;
-				int dim = (targs->jobs + k)->old->dim;
-				double* arr = (targs->jobs + k)->old->array;
-			
-				(targs->jobs + k)->new->array[i * dim + j] = 0.25 * (
-					arr[(i + 1) * dim + j] + 
-					arr[(i - 1) * dim + j] + 
-					arr[i * dim + j + 1] + 
-					arr[i * dim + j - 1]);
-			}
-			// Otherwise we are checking the difference between old and new
-			else
-			{
-				// Another thread may have found exceptional precision
-				// thus we shouldn't bother checking
-				if (*(targs->cancelFlag))
-				{
-					return 0;
-				}
-				
-				// Calculate the difference of entries between old and new at
-				// (i,j) entry
-				
-				int i = (targs->jobs + k)->i;
-				int j = (targs->jobs + k)->j;
-				int dim = (targs->jobs + k)->old->dim;
-			
-				double diff = 
-					(targs->jobs + k)->old->array[i * dim + j] 
-					- (targs->jobs + k)->new->array[i * dim + j];
-			
-				// If we find an entry that is not within precision
-				// then it is different
-				if (diff > -targs->prec && diff < targs->prec)
-				{
-					// We let the other threads know they should cancel
-					(*(targs->cancelFlag))++;
-					return 0;
-				}
-			}
-		}
-	}
-	
-	return 0;
+    // Allocate space for signaller
+    Signaller* s = malloc(sizeof(Signaller));
+
+    // target value is the value given
+    s->targetValue = targetValue;
+    
+    // initialise current counter value
+    s->currentValue = 0;
+    
+    // allocate and initialise conditional variable
+    s->pCond = malloc(sizeof(pthread_cond_t));
+    pthread_cond_init(s->pCond, NULL);
+    
+    // allocate and initialise mutex
+    s->pMutex= malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(s->pMutex, NULL);
+    
+    // finally return pointer of constructed Signaller
+    return s;
 }
 
-/*
-// Parallel implementation
-// Complete nonsense doesn't work
-void parIterate(int dim, double* old, double* new, int threadNum)
+// destructor for signaller
+void destroySignaller(Signaller* s)
 {
-	// Create a job queue and then run "threadNum" many threads 
-	// to process them
-	
-	// Allocate space for pointers to structs with arguments in them,
-	// this will essentially be our jobs queue
-	int queueSize =  (dim - 1) * (dim - 1);
-		
-	AvgArgs args[queueSize];
-	
-	// Iterate over rows
-	for (int i = 1; i < dim - 1; i++)
-	{
-		// Iterate over inner coloumns
-		for (int j = 1; j < dim - 1; j++)
-		{			
-			// Squash arguments into struct
-			(args + i * dim + j)->dim = &dim;
-			(args + i * dim + j)->i = &i;
-			(args + i * dim + j)->j = &j;
-			(args + i * dim + j)->old = old;
-			(args + i * dim + j)->new = new;
-		}
-	}
-	
-	//Now that we have our jobs we can go and run them
-	
-	// Create thread ids
-	pthread_t threads[queueSize];
-	
-	// Create pthreads
-	for (int i = 0; i < threadNum; i++)
-	{
-		pthread_create(threads + i, NULL, paverage, args + i);
-	}
-	
-	// Wait for threads
-	for (int i = 0; i < threadNum; i++)
-	{
-		pthread_join(threads[i], NULL);
-	}
+    // destroy condional variable and mutex
+    pthread_cond_destroy(s->pCond);
+    pthread_mutex_destroy(s->pMutex);
+
+    // free all the pointers
+    free(s->pCond);
+    free(s->pMutex);
+    free(s);
 }
 
-pthread_mutex_t lock;
-
-void* paverage(void* packedArgs)
+// Waits until current value becomes the target value
+void waitFor(Signaller* s)
 {
-	//Casting void* to (AvgArgs*) and taking value
-	AvgArgs args = *(AvgArgs*)packedArgs;
-	
-	printf("%f\n", args.old[(*args.i + 1) * *args.dim + *args.j]);
-	
-	 // Lock mutex
-	pthread_mutex_lock(&lock);
-	
-	// Calculate value
-	double result = 0.25 * 
-		(args.old[(*args.i + 1) * *args.dim + *args.j] + 
-		args.old[(*args.i - 1) * *args.dim + *args.j] + 
-		args.old[*args.i * *args.dim + *args.j + 1] + 
-		args.old[*args.i * *args.dim + *args.j - 1]);
-	
-   
-	
-	// Write to memory new value
-	//args.new[args.i * args.dim + args.j] = result;
-	
-	// Unlock mutex
-	pthread_mutex_unlock(&lock);
-	
-	// Exiting safely
-	pthread_exit(0);
-}*/
+    // lock with mutex to avoid race condition
+    pthread_mutex_lock(s->pMutex);
+    
+    while (s->currentValue != s->targetValue)
+    {
+        // wait for conditional varaible
+        pthread_cond_wait(s->pCond, s->pMutex);
+    }
+    
+    // Reset counter for reuse next time
+    // note that we don't decrement as in the semaphore case
+    s->currentValue = 0;
+    
+    // unlock mutex
+    pthread_mutex_unlock(s->pMutex);
+}
+
+// signal a signaller
+void signal(Signaller* s)
+{
+    // lock mutex
+    pthread_mutex_lock(s->pMutex);
+    
+    // increment counter counting uses
+    s->currentValue++;
+    
+    // unlock the mutex
+    pthread_mutex_unlock(s->pMutex);
+    
+    // signal the conditional varaible
+    pthread_cond_signal(s->pCond);
+}
+
+/* *** */
+
 
 /*
 --------- Array data structure -------------------------------------------------

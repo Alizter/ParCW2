@@ -18,6 +18,32 @@ SquareMatrix* duplicateMatrix(SquareMatrix* old);
 void freeMatrix(SquareMatrix* matrix);
 SquareMatrix* newMatrix(int dim);
 
+// Signaller
+
+// "Signaller" data structure like a reverse semaphore
+// instead of checking if the counter >0 we check if
+// the counter is != targetValue
+typedef struct 
+{
+    // The value that the counter wants to be (capacity of the room)
+    int targetValue; 
+    
+    // The value the counter is (number of people in the room)
+    int currentValue;
+    
+    // Conditional variable
+    pthread_cond_t *pCond;
+    
+    // Mutex for the counter
+    pthread_mutex_t *pMutex;
+    
+} Signaller;
+
+Signaller* newSignaller(int targetValue);
+void destroySignaller(Signaller* s);
+void waitFor(Signaller* s);
+void signal(Signaller* s);
+
 
 // File read and write
 
@@ -33,8 +59,8 @@ int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
 void naiveIterate(SquareMatrix** old, SquareMatrix** new, double prec);
 
 void parIterate(
-	SquareMatrix** old, 
-	SquareMatrix** new, 
+	SquareMatrix* old, 
+	SquareMatrix* new, 
 	double prec, int threadNum);
 
 void* threadWork(void* args);

@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS= -g -pthread -Wall -Wconversion -Wextra  
+CFLAGS= -g -pthread -Wall -Wconversion -Wextra -lm
 ##  
 main: main.o
-	$(CC) $(CFLAGS) -o main main.o 
+	$(CC) -o main main.o $(CFLAGS) 
 
 clean:
 	rm *.o
