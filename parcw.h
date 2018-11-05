@@ -17,6 +17,7 @@ typedef struct
 SquareMatrix* duplicateMatrix(SquareMatrix* old);
 void freeMatrix(SquareMatrix* matrix);
 SquareMatrix* newMatrix(int dim);
+int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b);
 
 // Signaller
 
@@ -55,6 +56,23 @@ void printMatrix(SquareMatrix* matrix, int colour);
 
 // Implementations
 
+// Data structure that gets passed to thread
+typedef struct
+{
+    int start;                  //  Start point of partition
+    int end;                    //  end point of parition
+    
+    double* diff;               // The difference between the iteration
+    
+    int id;                     // Thread id
+    Signaller* signalWorker;    // Signaller of the worker
+    Signaller* signalMaster;    // Signaller of the master
+    int quit;                   // Quit/Abort flag
+    SquareMatrix** old;         // A pointer to a pointer to the old matrix
+    SquareMatrix** new;         // A pointer to a pointer to the new matrix
+} ThreadArgs;
+
+
 int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
 void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec);
 
@@ -86,11 +104,11 @@ typedef struct
 typedef enum
 {
     FileException = -1,         // Program couldn't read file
-    ArgNumException = -3,    // Program has wrong number of arguents
-    ArrayReadFailure = -4,    // Program couldn't read array
-    PrecisionException = -5,// Program precision too small
-    DimensionException = -6,// Program dimension too small
-    ThreadNumException = -7 // Program threadNum too small
+    ArgNumException = -3,       // Program has wrong number of arguents
+    ArrayReadFailure = -4,      // Program couldn't read array
+    PrecisionException = -5,    // Program precision too small
+    DimensionException = -6,    // Program dimension too small
+    ThreadNumException = -7     // Program threadNum too small
 } Error;
 
 void throw(Error e, char** args);
