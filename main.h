@@ -10,8 +10,8 @@
 
 typedef struct
 {
-	double* array;
-	int dim;
+    double* array;
+    int dim;
 } SquareMatrix;
 
 SquareMatrix* duplicateMatrix(SquareMatrix* old);
@@ -59,9 +59,9 @@ int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
 void naiveIterate(SquareMatrix** old, SquareMatrix** new, double prec);
 
 void parIterate(
-	SquareMatrix* old, 
-	SquareMatrix* new, 
-	double prec, int threadNum);
+    SquareMatrix* old, 
+    SquareMatrix* new, 
+    double prec, int threadNum);
 
 void* threadWork(void* args);
 
@@ -74,23 +74,23 @@ void* threadWork(void* args);
 
 typedef struct
 {
-	int* dim;
-	int* i;
-	int* j;
-	double* old;
-	double* new;
+    int* dim;
+    int* i;
+    int* j;
+    double* old;
+    double* new;
 } AvgArgs;
 
 // Error handling
 
 typedef enum
 {
-	FileException = -1,	 	// Program couldn't read file
-	ArgNumException = -3,	// Program has wrong number of arguents
-	ArrayReadFailure = -4,	// Program couldn't read array
-	PrecisionException = -5,// Program precision too small
-	DimensionException = -6,// Program dimension too small
-	ThreadNumException = -7 // Program threadNum too small
+    FileException = -1,         // Program couldn't read file
+    ArgNumException = -3,    // Program has wrong number of arguents
+    ArrayReadFailure = -4,    // Program couldn't read array
+    PrecisionException = -5,// Program precision too small
+    DimensionException = -6,// Program dimension too small
+    ThreadNumException = -7 // Program threadNum too small
 } Error;
 
 void throw(Error e, char** args);

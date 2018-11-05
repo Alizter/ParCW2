@@ -13,13 +13,13 @@
 */
 
 /*
-	Contents:
-		* Main program
-		* Implementations (this is the bit with parallel stuff) 
-		* Signaller data structure
-		* Array data structure	
-		* File read and write
-		* Error handling
+    Contents:
+        * Main program
+        * Implementations (this is the bit with parallel stuff) 
+        * Signaller data structure
+        * Array data structure    
+        * File read and write
+        * Error handling
 */
 
 /*
@@ -29,97 +29,97 @@
 // Program takes in dim, fileName and precision
 int main(int argc, char** argv)
 {
-	// Default values
-	int dim = 5;
-	double inputPrecision = 1E-3;
-	int thrNum = 4;
-	int colour = 0;
+    // Default values
+    int dim = 5;
+    double inputPrecision = 1E-3;
+    int thrNum = 4;
+    int colour = 0;
 
-	// Command line options
-	int c;	
-	while ((c = getopt(argc, argv, "cd:p:t:")) != -1)
-	{
-		switch(c)
-		{			
-			case 'd': // dimension argument
-			{
-				dim = atoi(optarg);
-				
-				if (dim <= 0)
-				{
-					throw(DimensionException, NULL);
-				}
-				
-				break;
-			}
-			case 'p': // precision argument
-			{
-				inputPrecision = strtod(optarg, NULL);
-	
-				// If our precision is too small, our program may never stop
-				if (inputPrecision <= 0.0)
-				{
-					throw(PrecisionException, NULL);
-				}
-				
-				break;
-			}
-			case 't': // thread number argument
-			{
-				thrNum = atoi(optarg);
-	
-				if (thrNum <= 0)
-				{
-					throw(ThreadNumException, NULL);
-				}
-				
-				break;
-			}
-			case 'c': // colour enabled
-			{
-				colour = 1;
-				break;
-			}
-		}
-	}
-	
-	// Reading non-optional arguments
-	
-	// If the total number of arguments isn't the number of optional arguments
-	// plus the number of non-optional arguments, then we have a problem.
-	if (argc != 1 + optind)
-	{
-		throw(ArgNumException, NULL);
-	}
-	
-	// Get file name and increment pointer for next args if needed
-	char* fileName = argv[optind++];
-	
-	// Argument reading finished, file reading begins
-	
-	// Read input array
-	SquareMatrix* inputArray = readMatrix(dim, fileName);
-	
-	// Print input array
-	printf("Input array:\n");	
-	printMatrix(inputArray, colour);
-	printf("\n");
-	
-	// New and old matricies
-	// New would be calculated from old
-	SquareMatrix* old = duplicateMatrix(inputArray);
-	SquareMatrix* new = duplicateMatrix(inputArray);
-		
-	// Compute new values
-	parIterate(old, new, inputPrecision, thrNum);
-	
-	// Print new array
-	printf("Result:\n");
-	printMatrix(new, colour);
-	
-	// Exit the program Successfully
-	printf("Program finished.");
-	exit(0);
+    // Command line options
+    int c;    
+    while ((c = getopt(argc, argv, "cd:p:t:")) != -1)
+    {
+        switch(c)
+        {            
+            case 'd': // dimension argument
+            {
+                dim = atoi(optarg);
+                
+                if (dim <= 0)
+                {
+                    throw(DimensionException, NULL);
+                }
+                
+                break;
+            }
+            case 'p': // precision argument
+            {
+                inputPrecision = strtod(optarg, NULL);
+    
+                // If our precision is too small, our program may never stop
+                if (inputPrecision <= 0.0)
+                {
+                    throw(PrecisionException, NULL);
+                }
+                
+                break;
+            }
+            case 't': // thread number argument
+            {
+                thrNum = atoi(optarg);
+    
+                if (thrNum <= 0)
+                {
+                    throw(ThreadNumException, NULL);
+                }
+                
+                break;
+            }
+            case 'c': // colour enabled
+            {
+                colour = 1;
+                break;
+            }
+        }
+    }
+    
+    // Reading non-optional arguments
+    
+    // If the total number of arguments isn't the number of optional arguments
+    // plus the number of non-optional arguments, then we have a problem.
+    if (argc != 1 + optind)
+    {
+        throw(ArgNumException, NULL);
+    }
+    
+    // Get file name and increment pointer for next args if needed
+    char* fileName = argv[optind++];
+    
+    // Argument reading finished, file reading begins
+    
+    // Read input array
+    SquareMatrix* inputArray = readMatrix(dim, fileName);
+    
+    // Print input array
+    printf("Input array:\n");    
+    printMatrix(inputArray, colour);
+    printf("\n");
+    
+    // New and old matricies
+    // New would be calculated from old
+    SquareMatrix* old = duplicateMatrix(inputArray);
+    SquareMatrix* new = duplicateMatrix(inputArray);
+        
+    // Compute new values
+    parIterate(old, new, inputPrecision, thrNum);
+    
+    // Print new array
+    printf("Result:\n");
+    printMatrix(new, colour);
+    
+    // Exit the program Successfully
+    printf("Program finished.");
+    exit(0);
 }
 
 
@@ -133,17 +133,17 @@ int main(int argc, char** argv)
 // Data structure that gets passed to thread
 typedef struct
 {
-	int start;                  //  Start point of partition
-	int end;                    //  end point of parition
-	
-	double* diff;               // The difference between the iteration
-	
-	int id;                     // Thread id
+    int start;                  //  Start point of partition
+    int end;                    //  end point of parition
+    
+    double* diff;               // The difference between the iteration
+    
+    int id;                     // Thread id
     Signaller* signalWorker;    // Signaller of the worker
     Signaller* signalMaster;    // Signaller of the master
     int quit;                   // Quit/Abort flag
     SquareMatrix** old;         // A pointer to a pointer to the old matrix
-	SquareMatrix** new;         // A pointer to a pointer to the new matrix
+    SquareMatrix** new;         // A pointer to a pointer to the new matrix
 } ThreadArgs;
 
 void* worker(void* vargs)
@@ -201,15 +201,15 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     double prec, int thrNum)
 {
     // For readability
-	int dim = old->dim;
+    int dim = old->dim;
 
-	// Allocate space for thread args
-	ThreadArgs args[thrNum];
-	
-	// Allocate space for threads
-	pthread_t threads[thrNum];
-	
-	// Master signaller
+    // Allocate space for thread args
+    ThreadArgs args[thrNum];
+    
+    // Allocate space for threads
+    pthread_t threads[thrNum];
+    
+    // Master signaller
     Signaller* master = newSignaller(thrNum);
     
     // Allocate space for max differences
@@ -304,7 +304,9 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     destroySignaller(master);
 }
 
-/* Signaller */
+/*
+--------- Signaller ------------------------------------------------------------
+*/
 
 // Constructor for the signaller
 Signaller* newSignaller(int targetValue)
@@ -379,8 +381,6 @@ void signal(Signaller* s)
     pthread_cond_signal(s->pCond);
 }
 
-/* *** */
-
 
 /*
 --------- Array data structure -------------------------------------------------
@@ -391,54 +391,54 @@ void signal(Signaller* s)
 // of the matrix
 SquareMatrix* duplicateMatrix(SquareMatrix* old)
 {
-	// Create new square matrix
-	SquareMatrix* new = malloc(sizeof(SquareMatrix));
-	
-	// Allocate space for array
-	new->array = calloc(sizeof(double), (size_t)(old->dim * old->dim));
-	
-	// Copy array to new array
-	memcpy(
-		new->array, 
-		old->array, 
-		sizeof(double) * (size_t)(old->dim * old->dim));
-	
-	// Copy dims
-	new->dim = old->dim;
+    // Create new square matrix
+    SquareMatrix* new = malloc(sizeof(SquareMatrix));
+    
+    // Allocate space for array
+    new->array = calloc(sizeof(double), (size_t)(old->dim * old->dim));
+    
+    // Copy array to new array
+    memcpy(
+        new->array, 
+        old->array, 
+        sizeof(double) * (size_t)(old->dim * old->dim));
+    
+    // Copy dims
+    new->dim = old->dim;
 
-	
-	return new;
+    
+    return new;
 }
 
 // Free SquareMatrix from memory
 void freeMatrix(SquareMatrix* matrix)
 {
-	free(matrix->array);
-	free(matrix);
+    free(matrix->array);
+    free(matrix);
 }
 
 // Create a new square matrix of certain dimension
 SquareMatrix* newMatrix(int dim)
 {
-	if (dim <= 0)
-	{
-		throw(DimensionException, NULL);
-	}
-	
-	SquareMatrix* matrix = malloc(sizeof(SquareMatrix));
-	matrix->array = calloc(sizeof(double), (size_t)(dim * dim));
-	matrix->dim = dim;		
-	
-	return matrix;
+    if (dim <= 0)
+    {
+        throw(DimensionException, NULL);
+    }
+    
+    SquareMatrix* matrix = malloc(sizeof(SquareMatrix));
+    matrix->array = calloc(sizeof(double), (size_t)(dim * dim));
+    matrix->dim = dim;        
+    
+    return matrix;
 }
 
 /*
 ----- File read and write ------------------------------------------------------
-	
-	Here we add functionality for reading and writing of files. That way a text
-	file with a list of numbers (doubles) seperated by commas  (or any other 
-	deliminator) can be read, and a number providing the details of the
-	dimension can be given. This will allow the progam to read a matrix.
+    
+    Here we add functionality for reading and writing of files. That way a text
+    file with a list of numbers (doubles) seperated by commas  (or any other 
+    deliminator) can be read, and a number providing the details of the
+    dimension can be given. This will allow the progam to read a matrix.
 */
 
 // Given a file name and a dimension reads (dim * dim) double values from given
@@ -447,150 +447,150 @@ SquareMatrix* newMatrix(int dim)
 // Obviously if there are too many values it doesn't read them
 SquareMatrix* readMatrix(int dim, char* fileName)
 {
-	
-	FILE* file = fopen(fileName, "r");
-	
-	char* buffer;
-	long fileLength;
-	
-	if (file)
-	{
-		fseek(file, 0, SEEK_END);
-		fileLength = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		
-		buffer = malloc((size_t)fileLength);
-		
-		if (buffer)
-		{
-			fread(buffer, 1, (size_t)fileLength, file);
-		}
-		else
-		{
-			// Could not read array so throw error
-			throw(ArrayReadFailure, NULL);
-		}
-		
-		fclose(file);
-	}
-	else
-	{
-		// Could not read file so throw error
-		char* args[1] = { fileName };
-		throw(FileException, args);
-	}
-	
-	
-	// Create a new matrix to populate
-	SquareMatrix* matrix = newMatrix(dim);
-	
-	// Starting pointer
-	char* pStart = buffer;
-	
-	// End pointer (for strtod)
-	char* pEnd;
-	
-	// Number of elements read
-	int count = 0;
-	
-	// While the starting pointer is less than the buffer pointer
-	// plus the length of the buffer (i.e. when still in the buffer)
-	// AND the count is less than expected number of entries
-	while (pStart < (buffer + fileLength) && count < (dim * dim))
-	{
-		// The "count"th entry is the next readable double 
-		matrix->array[count] = strtod(pStart, &pEnd);
-		// Increment number of elements read
-		++count;
-		// We wish to skip commas (or any deliminator really)
-		pStart = pEnd + 1;
-	}
-	
-	return matrix;
+    
+    FILE* file = fopen(fileName, "r");
+    
+    char* buffer;
+    long fileLength;
+    
+    if (file)
+    {
+        fseek(file, 0, SEEK_END);
+        fileLength = ftell(file);
+        fseek(file, 0, SEEK_SET);
+        
+        buffer = malloc((size_t)fileLength);
+        
+        if (buffer)
+        {
+            fread(buffer, 1, (size_t)fileLength, file);
+        }
+        else
+        {
+            // Could not read array so throw error
+            throw(ArrayReadFailure, NULL);
+        }
+        
+        fclose(file);
+    }
+    else
+    {
+        // Could not read file so throw error
+        char* args[1] = { fileName };
+        throw(FileException, args);
+    }
+    
+    
+    // Create a new matrix to populate
+    SquareMatrix* matrix = newMatrix(dim);
+    
+    // Starting pointer
+    char* pStart = buffer;
+    
+    // End pointer (for strtod)
+    char* pEnd;
+    
+    // Number of elements read
+    int count = 0;
+    
+    // While the starting pointer is less than the buffer pointer
+    // plus the length of the buffer (i.e. when still in the buffer)
+    // AND the count is less than expected number of entries
+    while (pStart < (buffer + fileLength) && count < (dim * dim))
+    {
+        // The "count"th entry is the next readable double 
+        matrix->array[count] = strtod(pStart, &pEnd);
+        // Increment number of elements read
+        ++count;
+        // We wish to skip commas (or any deliminator really)
+        pStart = pEnd + 1;
+    }
+    
+    return matrix;
 }
 
 // Small sruct for passing around rgb values
 typedef struct
 {
-	int r,g,b;
+    int r,g,b;
 } RGB;
 
 // Takes a float and gives rgb values for rainbow colouring (basically
 // an inferior hsv -> rgb converter)
 RGB rgbRainbow(double x)
 {
-	//Small scalling factor for colouring
-	x *= 0.1;
+    //Small scalling factor for colouring
+    x *= 0.1;
 
     RGB rgb;
 
     int section = (int)(x * 6);
     double frac = (x * 6) - (double)((long)(x * 6));
 
-	switch (section % 6)
-	{
-		case 0:
-			rgb.r = 255;
-			rgb.g = (int)(255 * frac);
-			rgb.b = 0;
-			break;
-		case 1:
-			rgb.r = (int)(255 * (1.0 - frac));
-			rgb.g = 255;
-			rgb.b = 0;
-			break;
-		case 2:
-			rgb.r = 0;
-			rgb.g = 255;
-			rgb.b = (int)(255 * frac);
-			break;
-		case 3:
-			rgb.r = 0;
-			rgb.g = (int)(255 * (1.0 - frac));
-			rgb.b = 255;
-			break;
-		case 4:
-			rgb.r = (int)(255 * frac);
+    switch (section % 6)
+    {
+        case 0:
+            rgb.r = 255;
+            rgb.g = (int)(255 * frac);
+            rgb.b = 0;
+            break;
+        case 1:
+            rgb.r = (int)(255 * (1.0 - frac));
+            rgb.g = 255;
+            rgb.b = 0;
+            break;
+        case 2:
+            rgb.r = 0;
+            rgb.g = 255;
+            rgb.b = (int)(255 * frac);
+            break;
+        case 3:
+            rgb.r = 0;
+            rgb.g = (int)(255 * (1.0 - frac));
+            rgb.b = 255;
+            break;
+        case 4:
+            rgb.r = (int)(255 * frac);
 
-			rgb.g = 0;
-			rgb.b = 255;
-			break;
-		case 5:
-			rgb.r = 255;
-			rgb.g = 0;
-			rgb.b = (int)(255 * (1.0 - frac));
-			break;
-	}
-	
-	return rgb;
+            rgb.g = 0;
+            rgb.b = 255;
+            break;
+        case 5:
+            rgb.r = 255;
+            rgb.g = 0;
+            rgb.b = (int)(255 * (1.0 - frac));
+            break;
+    }
+    
+    return rgb;
 }
 
 // Prints the given matrix
 void printMatrix(SquareMatrix* matrix, int colour)
 {
-	for (int i = 0; i < matrix->dim; i++)
-	{
-		for (int j = 0; j < matrix->dim; j++)
-		{	
-			if (colour)
-			{
-				// We colour them based on their value
-				// Really only works on doubles between 0.0 and 1.0
-				RGB rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
-				
-				printf(
-					"\033[38;2;%d;%d;%dm%f\x1b[0m ", 
-					rgb.r, rgb.g, rgb.b, 
-					matrix->array[i * (matrix->dim) + j]);
-			}
-			else // We have decided a boring and monochrome output
-			{
-				printf("%f ", matrix->array[i * (matrix->dim) + j]);
-			}
-		}
-		
-		printf("\n");
-	}
+    for (int i = 0; i < matrix->dim; i++)
+    {
+        for (int j = 0; j < matrix->dim; j++)
+        {    
+            if (colour)
+            {
+                // We colour them based on their value
+                // Really only works on doubles between 0.0 and 1.0
+                RGB rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
+                
+                printf(
+                    "\033[38;2;%d;%d;%dm%f\x1b[0m ", 
+                    rgb.r, rgb.g, rgb.b, 
+                    matrix->array[i * (matrix->dim) + j]);
+            }
+            else // We have decided a boring and monochrome output
+            {
+                printf("%f ", matrix->array[i * (matrix->dim) + j]);
+            }
+        }
+        
+        printf("\n");
+    }
 }
 
 
@@ -602,35 +602,35 @@ void printMatrix(SquareMatrix* matrix, int colour)
 // Prints error message (or Success) with arguments and exits
 void throw(Error e, char** args)
 {
-	switch (e)
-	{		
-		case FileException:
-			printf("Error: Could not read file: %s\n", args[0]);
-			break;
-	
-		case ArgNumException:
-			printf("Error: Incorrect number of arguments given.\n");
-			break;
-		
-		case ArrayReadFailure:
-			printf("Error: Could not read array.\n");
-			break;
-			
-		case PrecisionException:
-			printf("Error: Given precision is too small.\n");
-			break;
-			
-		case DimensionException:
-			printf("Error: Given dimension is too small.\n");
-			break;
-			
-		case ThreadNumException:
-			printf("Error: Given thread number is too small.\n");
-			break;
-	}
-	
-	// Exit with error code
-	printf("Program exiting.\n");
-	exit(e);
+    switch (e)
+    {        
+        case FileException:
+            printf("Error: Could not read file: %s\n", args[0]);
+            break;
+    
+        case ArgNumException:
+            printf("Error: Incorrect number of arguments given.\n");
+            break;
+        
+        case ArrayReadFailure:
+            printf("Error: Could not read array.\n");
+            break;
+            
+        case PrecisionException:
+            printf("Error: Given precision is too small.\n");
+            break;
+            
+        case DimensionException:
+            printf("Error: Given dimension is too small.\n");
+            break;
+            
+        case ThreadNumException:
+            printf("Error: Given thread number is too small.\n");
+            break;
+    }
+    
+    // Exit with error code
+    printf("Program exiting.\n");
+    exit(e);
 }
 
