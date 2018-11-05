@@ -56,7 +56,7 @@ void printMatrix(SquareMatrix* matrix, int colour);
 // Implementations
 
 int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
-void naiveIterate(SquareMatrix** old, SquareMatrix** new, double prec);
+void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec);
 
 void parIterate(
     SquareMatrix* old, 

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 
 
 #include "main.h"
@@ -34,10 +35,12 @@ int main(int argc, char** argv)
     double inputPrecision = 1E-3;
     int thrNum = 4;
     int colour = 0;
+    
+    int timingMode = 0;
 
     // Command line options
     int c;    
-    while ((c = getopt(argc, argv, "cd:p:t:")) != -1)
+    while ((c = getopt(argc, argv, "cd:p:t:T")) != -1)
     {
         switch(c)
         {            
@@ -80,6 +83,11 @@ int main(int argc, char** argv)
                 colour = 1;
                 break;
             }
+            case 'T': // Timing mode enabled
+            {
+                timingMode = 1;
+                break;
+            }
         }
     }
     
@@ -100,22 +108,70 @@ int main(int argc, char** argv)
     // Read input array
     SquareMatrix* inputArray = readMatrix(dim, fileName);
     
-    // Print input array
-    printf("Input array:\n");    
-    printMatrix(inputArray, colour);
-    printf("\n");
-    
     // New and old matricies
     // New would be calculated from old
     SquareMatrix* old = duplicateMatrix(inputArray);
     SquareMatrix* new = duplicateMatrix(inputArray);
-        
-    // Compute new values
-    parIterate(old, new, inputPrecision, thrNum);
     
-    // Print new array
-    printf("Result:\n");
-    printMatrix(new, colour);
+    
+    
+    // If timing mode is enabled
+    if (timingMode)
+    {    
+        clock_t startTime, diff;
+        long int micro;
+    
+        // Naive iterate
+        
+        // Initialise matricies
+        old = duplicateMatrix(inputArray);
+        new = duplicateMatrix(inputArray);
+        
+        startTime = clock(); // Start
+        
+        naiveIterate(old, new, inputPrecision);
+        
+        diff = clock() - startTime; // Finish
+
+        micro = (diff * 10000000l / CLOCKS_PER_SEC);
+        printf("Naive iterate:\t\t\t%ld.%06ld seconds\n", 
+            micro / 10000000l, micro % 10000000l);
+        
+        // Parellel iterate
+        
+        // We test parallel iterate for threads numbers upto specified
+        
+        for (int i = 1; i <= thrNum; i++)
+        {
+            // Initialise matricies
+            old = duplicateMatrix(inputArray);
+            new = duplicateMatrix(inputArray);
+            
+            startTime = clock(); // Start
+            
+            parIterate(old, new, inputPrecision, thrNum);
+            
+            diff = clock() - startTime; // Finish
+
+            micro = (diff * 10000000l / CLOCKS_PER_SEC);
+            printf("Parallel iterate %d threads:\t%ld.%06ld seconds\n", 
+                i, micro / 10000000l, micro % 10000000l);
+        }
+    }
+    else // Compute old and display
+    {
+        // Print input array
+        printf("Input array:\n");    
+        printMatrix(inputArray, colour);
+        printf("\n");
+    
+        // Compute new values
+        parIterate(old, new, inputPrecision, thrNum);
+        
+        // Print new array
+        printf("Result:\n");
+        printMatrix(new, colour);
+    }
     
     // Exit the program Successfully
     printf("Program finished.");
@@ -303,6 +359,71 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     // destroy master signaller
     destroySignaller(master);
 }
+
+int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
+{    
+    int dim = new->dim;
+
+    // Iterate over inner rows
+    for (int i = 1; i < dim - 1; i++)
+    {
+        // Iterate over inner coloumns
+        for (int j = 1; j < dim - 1; j++)
+        {
+            // If we find an entry that is not within precision
+            // then it is different
+            double diff = 
+                fabs(old->array[i * dim + j] - new->array[i * dim + j]);
+            
+            if (diff > -precision && diff < precision)
+            {
+                return 1;
+            }
+        }
+    }
+    
+    // Else all are within spec
+    return 0;
+}
+
+// Non-parallel implementation
+// Takes in the dimension of the square array,
+// the old array, and the new arrays location
+// then returns nothing, having modified the new array.
+void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec)
+{    
+    do
+    {
+    
+        // Copy value of new to old
+        old = duplicateMatrix(new);
+
+        //By iterating over the inner rows,
+        //we do not affect the boundary.
+        
+        int dim = old->dim;
+        
+        // Iterate over inner rows
+        for (int i = 1; i < dim - 1; i++)
+        {
+            // Iterate over inner coloumns
+            for (int j = 1; j < dim - 1; j++)
+            {
+                // The corresponding entry of
+                // the new array is the average
+                // of it's neighbours in the old
+                new->array[i * dim + j] = 0.25 * (
+                    old->array[(i + 1) * dim + j] + 
+                    old->array[(i - 1) * dim + j] + 
+                    old->array[i * dim + j + 1] + 
+                    old->array[i * dim + j - 1]);
+            }
+        }
+    }
+    // loop if old and new are too different
+    while (isDiff(prec, new, old));
+}
+
 
 /*
 --------- Signaller ------------------------------------------------------------
