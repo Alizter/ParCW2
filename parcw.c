@@ -36,16 +36,22 @@ void* worker(void* vargs)
     // get dimension
     int dim = (*args->old)->dim;
     
+    // while not flagged to quit
     while (!args->quit)
     {
+        // wait for signal from master
         waitFor(args->signalWorker);
         
-        if (args->quit) break; // just in case break after wait
+        // just in case we are flagged, break
+        if (args->quit) break;
         
+        // record max difference in our batch
         double maxDiff = 0.0;
     
+        // going through each cell in our batch
         for (int k = args->start; k < args->end; k++)
         {
+            // converting to (i,j) coordinates
             int i = k / dim;
             int j = k % dim;
         
@@ -72,6 +78,7 @@ void* worker(void* vargs)
         // Set max diff
         *(args->diff) = maxDiff;
         
+        // tell master that we are done
         signal(args->signalMaster);
     }
     
@@ -196,6 +203,7 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     destroySignaller(master);
 }
 
+// Computation of differences for 
 int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
 {    
     int dim = new->dim;
@@ -231,9 +239,12 @@ void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec)
     SquareMatrix** pOld = &old;
     SquareMatrix** pNew = &new;
 
+    double maxDiff;
+
     do
     {
-    
+        maxDiff = 0.0;
+        
         // Shift new values into old
         SquareMatrix** temp = pOld;
         pOld = pNew;
@@ -258,11 +269,16 @@ void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec)
                     (*pOld)->array[(i - 1) * dim + j] + 
                     (*pOld)->array[i * dim + j + 1] + 
                     (*pOld)->array[i * dim + j - 1]);
+                
+                // compute max diff
+                maxDiff = fmax(maxDiff, fabs(
+                    (*pNew)->array[i * dim + j] - 
+                    (*pOld)->array[i * dim + j]));
             }
         }
     }
     // loop if old and new are too different
-    while (isDiff(prec, *pNew, *pOld));
+    while (maxDiff < prec);
 }
 
 
@@ -397,21 +413,20 @@ SquareMatrix* newMatrix(int dim)
 // Equality function for two square matricies
 int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b)
 {
-    if (a->dim == b->dim)
-    {
-        for (int i = 0; i < a->dim; i++)
-        {
-            if (a->array[i] != b->array[i])
-            {
-                return 0;
-            }
-        }
-    }
-    else
+    int flag = 1;
+
+    if (a->dim != b->dim)
     {
         return 0;
     }
-    
+
+    for (int i = 0; i < a->dim * a->dim; i++)
+    {
+        if (a->array[i] != b->array[i])
+        {
+            return 0;
+        }
+    }
     
     return 1;
 }
@@ -550,13 +565,13 @@ RGB rgbRainbow(double x)
 }
 
 // Prints the given matrix
-void printMatrix(SquareMatrix* matrix, int colour)
+void printMatrix(SquareMatrix* matrix, int isColour)
 {
     for (int i = 0; i < matrix->dim; i++)
     {
         for (int j = 0; j < matrix->dim; j++)
         {    
-            if (colour)
+            if (isColour)
             {
                 // We colour them based on their value
                 // Really only works on doubles between 0.0 and 1.0

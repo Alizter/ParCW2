@@ -11,3 +11,5 @@ clean :
 test : test.o parcw.o
 	$(CC) -o test test.o parcw.o $(CFLAGS)
 	./test
+
+all : main test
