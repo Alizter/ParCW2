@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS= -g -pthread -Wall -Wconversion -Wextra -lm -l pthread
-    
+
+.PHONY: all test clean main
 
 main : main.o parcw.o
 	$(CC) -o main main.o parcw.o $(CFLAGS) 

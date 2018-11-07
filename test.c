@@ -195,13 +195,13 @@ static char* test_partitionBlocks_4By4_3thr()
 ------ Implementations tests ---------------------------------------------------
 */
 
-void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec);
-
+// tests naive iterate
 static char* test_naiveIterate()
 {
+    double prec = 1E-5;
+    
     SquareMatrix* matrix = newMatrix(5);
-    
-    
+      
     double arr[25] = 
         {3, 234, 2, 12, -34, 
          5, 3, 235, 2, 356, 
@@ -224,24 +224,9 @@ static char* test_naiveIterate()
     
     expected->array = arrEx;
     
-
-    naiveIterate(old, new, 1E-6);
-
-/*    printMatrix(old, 1);
-    printf("\n");
-    printMatrix(new, 1);
-    printf("\n");
-    printMatrix(expected, 1);
-    printf("\n");
+    naiveIterate(old, new, prec);
     
-    SquareMatrix* old2 = duplicateMatrix(matrix);
-    
-    parIterate(old2, new, 1E-6, 2);
-    
-    printMatrix(new, 1);
-    printf("\n");*/
-    
-    mu_assert("naiveIterate failed", eqSquareMatrix(new, expected));
+    mu_assert("naiveIterate failed", eqPrecSquareMatrix(new, expected, prec));
     
 
     

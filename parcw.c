@@ -234,26 +234,37 @@ int isDiff(double precision, SquareMatrix* old, SquareMatrix* new)
 // Takes in the dimension of the square array,
 // the old array, and the new arrays location
 // then returns nothing, having modified the new array.
-void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec)
-{    
-    SquareMatrix** pOld = &old;
-    SquareMatrix** pNew = &new;
-
+void naiveIterate(SquareMatrix* pOld, SquareMatrix* pNew, double prec)
+{
     double maxDiff;
+    int swapFlag = 0;
+
+    // We assign pointers like this so we can swap them
+    SquareMatrix* old = pOld;
+    SquareMatrix* new = pNew;
+    
+    
 
     do
     {
+        //printMatrix(pOld, 1);
+        //printf("\n");
+    
+        if (swapFlag)
+        {
+            // Swap pointers
+            SquareMatrix* temp = old;
+            old = new;
+            new = temp;
+            swapFlag = 0;
+        }
+    
         maxDiff = 0.0;
-        
-        // Shift new values into old
-        SquareMatrix** temp = pOld;
-        pOld = pNew;
-        pNew = temp;
 
         //By iterating over the inner rows,
         //we do not affect the boundary.
         
-        int dim = (*pOld)->dim;
+        int dim = old->dim;
         
         // Iterate over inner rows
         for (int i = 1; i < dim - 1; i++)
@@ -264,21 +275,23 @@ void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec)
                 // The corresponding entry of
                 // the new array is the average
                 // of it's neighbours in the old
-                (*pNew)->array[i * dim + j] = 0.25 * (
-                    (*pOld)->array[(i + 1) * dim + j] + 
-                    (*pOld)->array[(i - 1) * dim + j] + 
-                    (*pOld)->array[i * dim + j + 1] + 
-                    (*pOld)->array[i * dim + j - 1]);
+                new->array[i * dim + j] = 0.25 * (
+                    old->array[(i + 1) * dim + j] + 
+                    old->array[(i - 1) * dim + j] + 
+                    old->array[i * dim + j + 1] + 
+                    old->array[i * dim + j - 1]);
                 
                 // compute max diff
                 maxDiff = fmax(maxDiff, fabs(
-                    (*pNew)->array[i * dim + j] - 
-                    (*pOld)->array[i * dim + j]));
+                    new->array[i * dim + j] - 
+                    old->array[i * dim + j]));
             }
         }
+        
+        swapFlag = 1;
     }
     // loop if old and new are too different
-    while (maxDiff < prec);
+    while (maxDiff > prec);
 }
 
 
@@ -413,8 +426,6 @@ SquareMatrix* newMatrix(int dim)
 // Equality function for two square matricies
 int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b)
 {
-    int flag = 1;
-
     if (a->dim != b->dim)
     {
         return 0;
@@ -423,6 +434,26 @@ int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b)
     for (int i = 0; i < a->dim * a->dim; i++)
     {
         if (a->array[i] != b->array[i])
+        {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+
+// Equality for two matrices within toleance
+int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec)
+{
+    if (a->dim != b->dim)
+    {
+        return 0;
+    }
+
+    for (int i = 0; i < a->dim * a->dim; i++)
+    {
+        if (fabs(a->array[i] - b->array[i]) > prec)
         {
             return 0;
         }

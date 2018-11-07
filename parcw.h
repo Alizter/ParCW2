@@ -14,6 +14,7 @@ SquareMatrix* duplicateMatrix(SquareMatrix* old);
 void freeMatrix(SquareMatrix* matrix);
 SquareMatrix* newMatrix(int dim);
 int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b);
+int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec);
 
 // Signaller
 
