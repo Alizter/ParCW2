@@ -14,9 +14,6 @@ We unit test using the minimalist unit testing MinUnit which can be found here:
 extern int tests_run;
 /* ******* */
 
-#include <stdio.h>
-#include <pthread.h>
-#include <stdlib.h>
 #include "parcw.h"
 
 
