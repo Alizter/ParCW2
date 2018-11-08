@@ -104,10 +104,8 @@ int main(int argc, char** argv)
     if (timingMode)
     {    
         clock_t startTime, diff;
-        long int micro;
-    
-        // Naive iterate
-        
+
+        // Naive iterate //     
         
         
         // Initialise matricies
@@ -119,16 +117,15 @@ int main(int argc, char** argv)
         
         startTime = clock(); // Start
         
-        // TODO: memory leak here
         naiveIterate(old, new, inputPrecision);
         
         diff = clock() - startTime; // Finish
 
-        micro = (diff * 10000000l / CLOCKS_PER_SEC);
-        printf("Naive iterate:\t\t\t%ld.%06ld seconds\n", 
-            micro / 10000000l, micro % 10000000l);
-        
-        // Parellel iterate
+		double naiveTime = ((double)diff) / CLOCKS_PER_SEC;
+
+		printf("Naive iterate:\t\t\t%f s\n", naiveTime);
+
+        // Parellel iterate //
         
         // We test parallel iterate for threads numbers upto specified
         
@@ -144,10 +141,11 @@ int main(int argc, char** argv)
             
             diff = clock() - startTime; // Finish
 
-            micro = (diff * 10000000l / CLOCKS_PER_SEC);
-            printf("Parallel iterate %d threads:\t%ld.%06ld seconds\n", 
-                i, micro / 10000000l, micro % 10000000l);
-                
+			double time = ((double)diff) / CLOCKS_PER_SEC;
+
+			printf("Parallel iterate %d threads:\t%f s\tSpeedup: %f\n", 
+				i, time, naiveTime / (i * time));
+
             freeMatrix(old);
             freeMatrix(new);
         }
