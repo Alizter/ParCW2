@@ -139,6 +139,7 @@ int main(int argc, char** argv)
             
             parIterate(old, new, inputPrecision, i);
             
+                        
             diff = clock() - startTime; // Finish
 
 			double time = ((double)diff) / CLOCKS_PER_SEC;

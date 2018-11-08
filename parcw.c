@@ -1,9 +1,6 @@
-
-#define _GNU_SOURCE
-
 #include "parcw.h"
 
-//#include <sched.h>
+#include <sys/sysinfo.h>
 
 
 
@@ -21,7 +18,7 @@
 // Work for thread
 void* worker(void* vargs)
 {   
-	printf("Thread: %ld running on CPU: %d", pthread_self(), sched_getcpu());
+	//printf("Thread: %ld running on CPU: %d\n", pthread_self(), sched_getcpu());
 
 
     // Cast void args to ThreadArgs
@@ -140,19 +137,23 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     // partition data
     partitionBlocks(args, thrNum, dim);
     
+    // number of processor
+	size_t nop = (size_t)get_nprocs_conf();
+	//printf("CPUs: %ld\n", nop);
+
     // Create and run threads
     for (int i = 0; i < thrNum; i++)
     {
     	// allocat space for pthrad attribute
    	    pthread_attr_t attr;
    	    // Allocate a cpu set
-   	    cpu_set_t* p_cpuset = CPU_ALLOC((size_t)thrNum);
+   	    cpu_set_t* p_cpuset = CPU_ALLOC((size_t)thrNum % nop);
    	    // get the cpu set size
-   	    size_t cpusetSize = CPU_ALLOC_SIZE((size_t)thrNum);
+   	    size_t cpusetSize = CPU_ALLOC_SIZE((size_t)thrNum % nop);
    	    // allocate cpus
    	    CPU_ZERO_S(cpusetSize, p_cpuset);
    	    // set the number of cpus
-   	    CPU_SET_S(i, cpusetSize, p_cpuset);
+   	    CPU_SET_S((size_t)i % nop, cpusetSize, p_cpuset);
    	    // initialise attribute
    	    pthread_attr_init(&attr);
         // set cpu set for attribute
