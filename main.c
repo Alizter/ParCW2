@@ -131,6 +131,8 @@ int main(int argc, char** argv)
         
         for (int i = 1; i <= thrNum; i++)
         {
+        	clock_t startTime, diff;
+        
             // Initialise matricies
             old = duplicateMatrix(inputArray);
             new = duplicateMatrix(inputArray);
