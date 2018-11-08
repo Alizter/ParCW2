@@ -36,6 +36,13 @@ void* worker(void* vargs)
         // just in case we are flagged, break
         if (args->quit) break;
         
+        for (double d = 0.0; d < 1E6; d++)
+        {
+        	double x = pow(d, d);
+        	
+        	double y = x - d;
+        }
+        
         // record max difference in our batch
         double maxDiff = 0.0;
     
