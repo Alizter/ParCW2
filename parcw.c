@@ -48,16 +48,7 @@ void* worker(void* vargs)
         
         // just in case we are flagged, break
         if (args->quit) break;
-        
-        //
-        for (double d = 0.0; d < 1E6; d++)
-        {
-        	double x = pow(d, d);
-        	
-        	double y = x - d;
-        }
-        /////
-        
+              
         // record max difference in our batch
         double maxDiff = 0.0;
     
@@ -159,13 +150,16 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     for (int i = 0; i < thrNum; i++)
     {
    	    pthread_attr_t attr;
-   	    cpu_set_t cpuset;
+   	    // Allocate a cpu set
+   	    cpu_set_t* p_cpuset = CPU_ALLOC(thrNum);
+   	    size_t cpusetSize = CPU_ALLOC_SIZE(thrNum);
+   	    
+   	    CPU_ZERO_S(cpusetSize, p_cpuset);
+   	    CPU_SET_S(i, cpusetSize, p_cpuset);
    	    
    	    pthread_attr_init(&attr);
-    	
-    	CPU_ZERO(&cpuset);
-        CPU_SET(i, &cpuset);
-        pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
+        
+        pthread_attr_setaffinity_np(&attr, cpusetSize, p_cpuset);
     	
         pthread_create(threads + i, &attr, worker, (void*)(args + i));
     }
