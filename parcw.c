@@ -1,4 +1,11 @@
+
+#define _GNU_SOURCE
+
 #include "parcw.h"
+
+//#include <sched.h>
+
+
 
 /* File width
 --------------------------------------------------------------------------------
@@ -21,6 +28,12 @@
 
 void* worker(void* vargs)
 {   
+	//cpu_set_t cputype;
+	
+	//pthread_getaffinity_np(0, sizeof(cputype), &cputype);
+
+//	sched_getaffinity(0, sizeof(cputype), &cputype);
+
     // Cast void args to ThreadArgs
     ThreadArgs* args = (ThreadArgs*)vargs;
 
@@ -36,12 +49,14 @@ void* worker(void* vargs)
         // just in case we are flagged, break
         if (args->quit) break;
         
+        //
         for (double d = 0.0; d < 1E6; d++)
         {
         	double x = pow(d, d);
         	
         	double y = x - d;
         }
+        /////
         
         // record max difference in our batch
         double maxDiff = 0.0;
@@ -139,10 +154,20 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     partitionBlocks(args, thrNum, dim);
     
     
+    
     // Create and run threads
     for (int i = 0; i < thrNum; i++)
     {
-        pthread_create(threads + i, NULL, worker, (void*)(args + i));
+   	    pthread_attr_t attr;
+   	    cpu_set_t cpuset;
+   	    
+   	    pthread_attr_init(&attr);
+    	
+    	CPU_ZERO(&cpuset);
+        CPU_SET(i, &cpuset);
+        pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
+    	
+        pthread_create(threads + i, &attr, worker, (void*)(args + i));
     }
     
     int withinPrecision = 0;
