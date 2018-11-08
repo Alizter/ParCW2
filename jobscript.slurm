@@ -24,4 +24,4 @@
 #SBATCH --mail-user=ac2288@bath.ac.uk
 
 # run the application
-./main -T -t 16 array3 -d 30 -p 1E-8
+./main -T -t 32 array3 -d 100 -p 1E-9
