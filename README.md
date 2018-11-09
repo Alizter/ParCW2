@@ -129,6 +129,7 @@ Parallel iterate 16 threads:	7.341499 s	Speedup: 1.959612
 Program finished.
 ```
 ## Testing on Balena
+`./main -T -t 32 array3 -d 100 -p 1E-9`
 ```
 [ac2288@balena-02 parcw]$ cat myjob.out
 ST: 0   D: 4040000      C: 4040000
