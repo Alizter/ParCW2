@@ -144,7 +144,7 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
     // Create and run threads
     for (int i = 0; i < thrNum; i++)
     {
-    	// allocat space for pthrad attribute
+    	// allocat space for pthread attribute
    	    pthread_attr_t attr;
    	    // Allocate a cpu set
    	    cpu_set_t* p_cpuset = CPU_ALLOC((size_t)thrNum % nop);
