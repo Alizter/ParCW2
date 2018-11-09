@@ -72,7 +72,7 @@ See pdf attached.
  
  To 
  
- 
+```
 ali@brachiosaurus:~/parcw$ make
 gcc -g -pthread -Wall -Wconversion -Wextra -lm -l pthread -std=gnu99   -c -o main.o main.c
 main.c: In function ‘main’:
@@ -126,4 +126,4 @@ Parallel iterate 14 threads:	5.977018 s	Speedup: 2.406968
 Parallel iterate 15 threads:	6.520544 s	Speedup: 2.206332
 Parallel iterate 16 threads:	7.341499 s	Speedup: 1.959612
 Program finished.
-
+```
