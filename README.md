@@ -71,7 +71,8 @@ See pdf attached.
 ## Unit testing
  
  To 
- 
+
+## Testing on Brachiosaurus
 ```
 ali@brachiosaurus:~/parcw$ make
 gcc -g -pthread -Wall -Wconversion -Wextra -lm -l pthread -std=gnu99   -c -o main.o main.c
@@ -126,4 +127,57 @@ Parallel iterate 14 threads:	5.977018 s	Speedup: 2.406968
 Parallel iterate 15 threads:	6.520544 s	Speedup: 2.206332
 Parallel iterate 16 threads:	7.341499 s	Speedup: 1.959612
 Program finished.
+```
+## Testing on Balena
+```
+[ac2288@balena-02 parcw]$ cat myjob.out
+ST: 0   D: 4040000      C: 4040000
+Naive iterate:                  4.040000 s
+Parallel iterate 1 threads:     7.903556 s      Speedup: 0.511162
+Parallel iterate 2 threads:     4.072275 s      Speedup: 0.992074
+Parallel iterate 3 threads:     2.915246 s      Speedup: 1.385818
+Parallel iterate 4 threads:     2.375720 s      Speedup: 1.700537
+Parallel iterate 5 threads:     2.028088 s      Speedup: 1.992024
+Parallel iterate 6 threads:     1.621585 s      Speedup: 2.491389
+Parallel iterate 7 threads:     1.771690 s      Speedup: 2.280308
+Parallel iterate 8 threads:     1.544127 s      Speedup: 2.616365
+Parallel iterate 9 threads:     1.693876 s      Speedup: 2.385062
+Parallel iterate 10 threads:    1.593370 s      Speedup: 2.535506
+Parallel iterate 11 threads:    1.581546 s      Speedup: 2.554463
+Parallel iterate 12 threads:    1.485761 s      Speedup: 2.719145
+Parallel iterate 13 threads:    1.515069 s      Speedup: 2.666545
+Parallel iterate 14 threads:    2.153764 s      Speedup: 1.875785
+Parallel iterate 15 threads:    1.925700 s      Speedup: 2.097939
+Parallel iterate 16 threads:    1.793719 s      Speedup: 2.252304
+Parallel iterate 17 threads:    2.167608 s      Speedup: 1.863806
+Parallel iterate 18 threads:    2.266392 s      Speedup: 1.782569
+Parallel iterate 19 threads:    2.232860 s      Speedup: 1.809339
+Parallel iterate 20 threads:    2.238318 s      Speedup: 1.804927
+Parallel iterate 21 threads:    2.295505 s      Speedup: 1.759961
+Parallel iterate 22 threads:    2.306734 s      Speedup: 1.751394
+Parallel iterate 23 threads:    2.356231 s      Speedup: 1.714603
+Parallel iterate 24 threads:    2.506357 s      Speedup: 1.611901
+Parallel iterate 25 threads:    2.537136 s      Speedup: 1.592347
+Parallel iterate 26 threads:    2.598869 s      Speedup: 1.554522
+Parallel iterate 27 threads:    2.605649 s      Speedup: 1.550477
+Parallel iterate 28 threads:    2.687727 s      Speedup: 1.503129
+Parallel iterate 29 threads:    2.907241 s      Speedup: 1.389634
+Parallel iterate 30 threads:    2.485910 s      Speedup: 1.625160
+Parallel iterate 31 threads:    2.788240 s      Speedup: 1.448943
+Parallel iterate 32 threads:    2.605861 s      Speedup: 1.550351
+Program finished.
+
+########################################################################
+----------------------! Balena Job Details !----------------------------
+
+JobID          : 1715598
+No. of nodes   : 1
+No. of CPUs    : 16
+Timelimit      : 00:10:00
+Elapsed time   : 00:01:25
+Nodelist       : node-sw-160
+Energy Used    : 11028.75 Joules
+
+########################################################################
+
 ```
