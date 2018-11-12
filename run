@@ -7,6 +7,6 @@ do
     #sbatch jobscript.slurm $i $j $($i * 10 + $j)
     echo $i
     echo $j
-    echo $(i * 10 + j)
+    echo $((i * 10 + j))
   done
 done
