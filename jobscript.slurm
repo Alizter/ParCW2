@@ -24,9 +24,10 @@
 #SBATCH --mail-user=ac2288@bath.ac.uk
 
 # run the application
-for i in `seq 1 16`;
-    do
-        ./main -T -t $i array3 -d 100 -p 1E-10
-    done    
+#for i in `seq 1 16`;
+#    do
+#        ./main -T -t $i array4 -d 1000 -p 1E-10
+#    done    
 
 
+./main -T -t 8 array4 -d 1000 -p 1E-10
