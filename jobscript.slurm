@@ -26,6 +26,7 @@
 # run the application
 
 ./main -T -t $2 array4 -d $(($1 * 20)) -p 1E-10
+cat myjob.out >> results
 
 
 #./main -T -t 8 array4 -d 150 -p 1E-10
