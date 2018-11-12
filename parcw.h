@@ -8,6 +8,7 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
+#include <sys/sysinfo.h>
 
 // Array data structure
 
@@ -52,8 +53,16 @@ void signal(Signaller* s);
 
 // File read and write
 
+// Small sruct for passing around rgb values
+typedef struct
+{
+    int r,g,b;
+} RGB;
+
 SquareMatrix* readMatrix(int dim, char* fileName);
+RGB rgbRainbow(double x);
 void printMatrix(SquareMatrix* matrix, int colour);
+
 
 
 
@@ -110,7 +119,8 @@ typedef enum
     ArrayReadFailure = -4,      // Program couldn't read array
     PrecisionException = -5,    // Program precision too small
     DimensionException = -6,    // Program dimension too small
-    ThreadNumException = -7     // Program threadNum too small
+    ThreadNumException = -7,    // Program threadNum too small
+    BoundaryException = -8      // Thread allocation outside of boundary
 } Error;
 
 void throw(Error e, char** args);

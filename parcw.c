@@ -1,16 +1,19 @@
+
+
 #include "parcw.h"
 
-#include <sys/sysinfo.h>
 
+/*
+-----------------------------------------------------------------------------
+    Contents
 
+    * ~Ln18  Implementation 
+    * ~Ln311 Signaller
+    * ~Ln389 Array data structure
+    * ~Ln478 File read and write
+    * ~Ln640 Error handling
 
-/* File width
---------------------------------------------------------------------------------
 */
-
-
-
-
 /*
 ---- Implementations -----------------------------------------------------------
 */
@@ -18,9 +21,6 @@
 // Work for thread
 void* worker(void* vargs)
 {   
-	//printf("Thread: %ld running on CPU: %d\n", pthread_self(), sched_getcpu());
-
-
     // Cast void args to ThreadArgs
     ThreadArgs* args = (ThreadArgs*)vargs;
 
@@ -62,7 +62,11 @@ void* worker(void* vargs)
             }
             else
             {
-                // Throw boundary exception?
+                // Throw boundary exception
+                // We want the error message to print as much information as
+                // possible about the circumstance
+                
+                
             }
         }
         
@@ -438,13 +442,16 @@ SquareMatrix* newMatrix(int dim)
 // Equality function for two square matricies
 int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b)
 {
+    // check dimension
     if (a->dim != b->dim)
     {
         return 0;
     }
 
+    // check each element
     for (int i = 0; i < a->dim * a->dim; i++)
     {
+        // compare doubles in each element
         if (a->array[i] != b->array[i])
         {
             return 0;
@@ -458,19 +465,24 @@ int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b)
 // Equality for two matrices within toleance
 int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec)
 {
+    // check dimensions
     if (a->dim != b->dim)
     {
         return 0;
     }
 
+    // check each element
     for (int i = 0; i < a->dim * a->dim; i++)
     {
+        // if there amounts are larger a given precision
         if (fabs(a->array[i] - b->array[i]) > prec)
         {
+            // return 0 failing the equality
             return 0;
         }
     }
     
+    // otherwise we have suceeded
     return 1;
 }
 
@@ -489,20 +501,25 @@ int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec)
 // Obviously if there are too many values it doesn't read them
 SquareMatrix* readMatrix(int dim, char* fileName)
 {
-    
+    // Open file
     FILE* file = fopen(fileName, "r");
     
+    // buffer and file length
     char* buffer;
     long fileLength;
     
+    // if file != null
     if (file)
     {
+        // get the file length
         fseek(file, 0, SEEK_END);
         fileLength = ftell(file);
         fseek(file, 0, SEEK_SET);
         
+        // allocate memory for buffer
         buffer = malloc((size_t)fileLength);
         
+        // if memory allocated
         if (buffer)
         {
             fread(buffer, 1, (size_t)fileLength, file);
@@ -513,6 +530,7 @@ SquareMatrix* readMatrix(int dim, char* fileName)
             throw(ArrayReadFailure, NULL);
         }
         
+        // close file
         fclose(file);
     }
     else
@@ -551,18 +569,12 @@ SquareMatrix* readMatrix(int dim, char* fileName)
     return matrix;
 }
 
-// Small sruct for passing around rgb values
-typedef struct
-{
-    int r,g,b;
-} RGB;
-
 // Takes a float and gives rgb values for rainbow colouring (basically
 // an inferior hsv -> rgb converter)
 RGB rgbRainbow(double x)
 {
     //Small scalling factor for colouring
-    x *= 0.1;
+    x *= 0.2;
 
     RGB rgb;
 
@@ -669,6 +681,9 @@ void throw(Error e, char** args)
         case ThreadNumException:
             printf("Error: Given thread number is too small.\n");
             break;
+            
+        case BoundaryException:
+            printf("Error: Thread
     }
     
     // Exit with error code
