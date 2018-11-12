@@ -25,8 +25,8 @@
 
 # run the application
 
-echo $3
 ./main -T -t $2 array4 -d $(($1 * 20)) -p 1E-10
+echo "dim $(($1 * 20))    t $2"
 cat myjob.out >> results
 
 
