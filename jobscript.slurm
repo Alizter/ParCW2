@@ -30,4 +30,4 @@
 #    done    
 
 
-./main -T -t 8 array4 -d 1000 -p 1E-10
+./main -T -t 8 array4 -d 150 -p 1E-10
