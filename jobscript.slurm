@@ -23,11 +23,13 @@
 # send mail to this address
 #SBATCH --mail-user=ac2288@bath.ac.uk
 
-# run the application
-#for i in `seq 1 16`;
-#    do
-#        ./main -T -t $i array4 -d 1000 -p 1E-10
-#    done    
+ run the application
+for i in `seq 1 10`;
+do
+  for j in `seq 1 16`;
+  do
+    ./main -T -t $j array4 -d $(($i * 20)) -p 1E-10
+  done    
+done
 
-
-./main -T -t 8 array4 -d 150 -p 1E-10
+#./main -T -t 8 array4 -d 150 -p 1E-10
