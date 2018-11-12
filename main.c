@@ -103,52 +103,51 @@ int main(int argc, char** argv)
     // If timing mode is enabled
     if (timingMode)
     {    
-        clock_t startTime, diff;
+//        clock_t startTime, diff, end;
+        
+        struct timespec start, finish;
+		double time;
 
         // Naive iterate //     
         
-        
-        // Initialise matricies
-        freeMatrix(old);
-        freeMatrix(new);
-        
-        old = duplicateMatrix(inputArray);
-        new = duplicateMatrix(inputArray);
-        
-        startTime = clock(); // Start
+        // Start timing
+        clock_gettime(CLOCK_MONOTONIC, &start);
         
         naiveIterate(old, new, inputPrecision);
         
-        diff = clock() - startTime; // Finish
-
-		double naiveTime = ((double)diff) / CLOCKS_PER_SEC;
-
-		printf("Naive iterate:\t\t\t%f s\n", naiveTime);
+        // End timing
+        clock_gettime(CLOCK_MONOTONIC, &finish);
+        
+        // Compute elapsed time
+	    time = (double)(finish.tv_sec - start.tv_sec);
+        time += (double)(finish.tv_nsec - start.tv_nsec) / 1E9;
+        
+		printf("Naive iterate:\t\t\t%f s\n", time);
 
         // Parellel iterate //
         
-        // We test parallel iterate for threads numbers upto specified
+   
+        // Initialise matricies
+        old = duplicateMatrix(inputArray);
+        new = duplicateMatrix(inputArray);
         
-        for (int i = 1; i <= thrNum; i++)
-        {
-            // Initialise matricies
-            old = duplicateMatrix(inputArray);
-            new = duplicateMatrix(inputArray);
-            
-            startTime = clock(); // Start
-            
-            parIterate(old, new, inputPrecision, i);
-            
-            diff = clock() - startTime; // Finish
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
-			double time = ((double)diff) / CLOCKS_PER_SEC;
+        parIterate(old, new, inputPrecision, thrNum);
 
-			printf("Parallel iterate %d threads:\t%f s\tSpeedup: %f\n", 
-				i, time, naiveTime / (i * time));
+        clock_gettime(CLOCK_MONOTONIC, &finish);
 
-            freeMatrix(old);
-            freeMatrix(new);
-        }
+		double naiveTime = time;
+
+        time = (double)(finish.tv_sec - start.tv_sec);
+        time += (double)(finish.tv_nsec - start.tv_nsec) / 1E9;
+        
+		printf("Parallel iterate %d threads:\t%f s\tSpeedup: %f\n", 
+			thrNum, time, naiveTime / (time));
+
+        freeMatrix(old);
+        freeMatrix(new);
+    
     }
     else // Compute old and display
     {

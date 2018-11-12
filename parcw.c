@@ -1,26 +1,26 @@
 #include "parcw.h"
 
+#include <sys/sysinfo.h>
+
+
+
 /* File width
 --------------------------------------------------------------------------------
 */
 
-/*
-    Contents:
-        * Implementations (this is the bit with parallel stuff) 
-        * Signaller data structure
-        * Array data structure    
-        * File read and write
-        * Error handling
-*/
+
 
 
 /*
 ---- Implementations -----------------------------------------------------------
 */
 
-
+// Work for thread
 void* worker(void* vargs)
 {   
+	//printf("Thread: %ld running on CPU: %d\n", pthread_self(), sched_getcpu());
+
+
     // Cast void args to ThreadArgs
     ThreadArgs* args = (ThreadArgs*)vargs;
 
@@ -35,7 +35,7 @@ void* worker(void* vargs)
         
         // just in case we are flagged, break
         if (args->quit) break;
-        
+              
         // record max difference in our batch
         double maxDiff = 0.0;
     
@@ -80,15 +80,20 @@ void* worker(void* vargs)
 // deciding how it will get partitioned
 void partitionBlocks(ThreadArgs* args, int thrNum, int dim)
 {
+	// total number of cells
     int size = dim * dim;
+    
+    //we allocate chunks like this
     int chunkSize = (size / thrNum) + (size % thrNum) / thrNum;
     
+    // equally distribute all but the last thread
     for (int i = 0; i < thrNum - 1; i++)
     {
         args[i].start = i * chunkSize;
         args[i].end = (i + 1) * chunkSize;
     }
 
+	//give the last thread whats left over
     args[thrNum - 1].start = (thrNum - 1) * chunkSize;
     args[thrNum - 1].end = size;
 }
@@ -129,15 +134,35 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
         
     }
     
+    // partition data
     partitionBlocks(args, thrNum, dim);
     
-    
+    // number of processor
+	size_t nop = (size_t)get_nprocs_conf();
+	//printf("CPUs: %ld\n", nop);
+
     // Create and run threads
     for (int i = 0; i < thrNum; i++)
     {
-        pthread_create(threads + i, NULL, worker, (void*)(args + i));
+    	// allocat space for pthread attribute
+   	    pthread_attr_t attr;
+   	    // Allocate a cpu set
+   	    cpu_set_t* p_cpuset = CPU_ALLOC((size_t)thrNum % nop);
+   	    // get the cpu set size
+   	    size_t cpusetSize = CPU_ALLOC_SIZE((size_t)thrNum % nop);
+   	    // allocate cpus
+   	    CPU_ZERO_S(cpusetSize, p_cpuset);
+   	    // set the number of cpus
+   	    CPU_SET_S((size_t)i % nop, cpusetSize, p_cpuset);
+   	    // initialise attribute
+   	    pthread_attr_init(&attr);
+        // set cpu set for attribute
+        pthread_attr_setaffinity_np(&attr, cpusetSize, p_cpuset);
+    	// create thread
+        pthread_create(threads + i, &attr, worker, (void*)(args + i));
     }
     
+    // flag for within precision
     int withinPrecision = 0;
     
     while (!withinPrecision)
@@ -234,12 +259,8 @@ void naiveIterate(SquareMatrix* pOld, SquareMatrix* pNew, double prec)
     SquareMatrix* old = pOld;
     SquareMatrix* new = pNew;
     
-    
-
     do
     {
-        //printMatrix(pOld, 1);
-        //printf("\n");
     
         if (swapFlag)
         {

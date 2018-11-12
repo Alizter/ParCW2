@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -g -pthread -Wall -Wconversion -Wextra -lm -l pthread -std=gnu99
+CFLAGS= -g -pthread -Wall -Wconversion -Wextra -lm -l pthread -lrt -std=gnu99
 
 .PHONY: all test clean main
 
