@@ -21,7 +21,7 @@
 #SBATCH --mail-type=END
 
 # send mail to this address
-#SBATCH --mail-user=ac2288@bath.ac.uk
+##SBATCH --mail-user=ac2288@bath.ac.uk
 
 # run the application
 
