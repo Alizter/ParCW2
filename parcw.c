@@ -683,7 +683,8 @@ void throw(Error e, char** args)
             break;
             
         case BoundaryException:
-            printf("Error: Thread
+            printf("Error: Thread partition out of bounds");
+            break;
     }
     
     // Exit with error code
