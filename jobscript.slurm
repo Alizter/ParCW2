@@ -24,7 +24,7 @@
 #SBATCH --mail-user=ac2288@bath.ac.uk
 
  run the application
-for i in `seq 1 10`;
+for i in `seq 7 10`;
 do
   for j in `seq 1 16`;
   do
