@@ -50,7 +50,7 @@ See pdf attached.
  ```
  
  By default:
-     * output will not be coloured.
+    * output will not be coloured.
     * dim will be 5
     * prec will be 1E-3
     * num will be 4
@@ -69,9 +69,7 @@ See pdf attached.
  ```
  
 ## Unit testing
- 
-<<<<<<< HEAD
- In order to maintain the correctness of the program, we have implemented unit tests. These can be run by running `make test` which will go ahead and run the tests after compiling them. 
+In order to maintain the correctness of the program, we have implemented unit tests. These can be run by running `make test` which will go ahead and run the tests after compiling them. 
  
 ## Testing on Balena
 
@@ -112,9 +110,6 @@ Parallel iterate 30 threads:    15.400000 s     Speedup: 0.008723
 Parallel iterate 31 threads:    16.050000 s     Speedup: 0.008100
 Parallel iterate 32 threads:    16.040000 s     Speedup: 0.007851
 ```
-
-=======
- To 
 
 ## Testing on Brachiosaurus
 ```
@@ -226,4 +221,4 @@ Energy Used    : 11028.75 Joules
 ########################################################################
 
 ```
->>>>>>> 7e2fd59bd8978395fd2a7585856da1a573db8fd7
+
