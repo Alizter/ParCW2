@@ -79,7 +79,6 @@ int main(int argc, char** argv)
             }
             case 'o': // Output file specified
             {
-                free(outFileName);
                 outFileName = optarg;
             }
         }
