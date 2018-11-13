@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
     // Command line options
     int c;    
-    while ((c = getopt(argc, argv, "d:o:p:t:T:P")) != -1)
+    while ((c = getopt(argc, argv, "d:o:p:t:TP")) != -1)
     {
         switch(c)
         {            
@@ -74,12 +74,12 @@ int main(int argc, char** argv)
             case 'T': // Timing mode enabled
             {
                 timingMode = 1;
-                timingFileName = optarg;
                 break;
             }
             case 'o': // Output file specified
             {
                 outFileName = optarg;
+                break;
             }
         }
     }
@@ -166,11 +166,11 @@ int main(int argc, char** argv)
             //
        
             // Go through each thread number
-            for (int j = 1; i < thrNum; j++)
+            for (int j = 1; j < thrNum; j++)
             {
                 // Initialise matricies
                 old = resizeMatrix(inputArray, ndim);
-                //new = resizeMatrix(inputArray, ndim);
+                new = resizeMatrix(inputArray, ndim);
                 
                 // Start timing
                 clock_gettime(CLOCK_MONOTONIC, &start);
@@ -207,7 +207,7 @@ int main(int argc, char** argv)
         //printMatrix(inputArray, colour);
         //printf("\n");
     
-        printf("Computation begun... ");
+        printf("Computation begun...");
     
         // Compute new values
         parIterate(old, new, inputPrecision, thrNum);
@@ -216,6 +216,14 @@ int main(int argc, char** argv)
         
         // TODO: Write to results file
         FILE* outFile = fopen(outFileName, "ab+");
+        
+        if (outFile == NULL)
+        {
+            // Could not read file so throw error
+            char* args[1] = { outFileName };
+            throw(FileException, args);
+        }
+        
         fprintMatrix(outFile, new);
         fclose(outFile);
         

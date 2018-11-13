@@ -134,6 +134,31 @@ static char* test_duplicateMatrix()
 
 }
 
+// Test resizeMatrix()
+static char* test_resizeMatrix()
+{
+    SquareMatrix* matrix = newMatrix(5);
+    
+    double arr[25] = 
+        {3, 234, 2, 12, -34, 
+         5, 3, 235, 2, 356, 
+         1, 6, 8, 5, 32, 
+         6, 3, 6, 32, 57, 
+         234, 3, 4, 6, 5}; 
+         
+    matrix->array = arr;
+    
+    SquareMatrix* real = newMatrix(4);
+    real->array = arr;
+    
+    SquareMatrix* new = resizeMatrix(matrix, 4);
+    
+    mu_assert("error, resized matrix dimension wrong", new->dim == real->dim);
+    mu_assert("error, resized matrix unexpected", eqSquareMatrix(new, real));
+    
+    return 0;
+}
+
 // test partitionBlocks on 4by4 for 4 threads
 static char* test_partitionBlocks_4By4_4thr()
 {
@@ -244,6 +269,8 @@ static char* all_tests()
     mu_run_test(test_eqSquareMatrix_equal);
 
     mu_run_test(test_duplicateMatrix);
+    mu_run_test(test_resizeMatrix);
+    
     mu_run_test(test_partitionBlocks_4By4_4thr);
     mu_run_test(test_partitionBlocks_4By4_3thr);
     

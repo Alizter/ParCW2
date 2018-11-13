@@ -450,7 +450,7 @@ SquareMatrix* resizeMatrix(SquareMatrix* old, int dim)
     
     // dim >= old->dim
     // Create new square matrix
-    SquareMatrix* new = malloc(sizeof(SquareMatrix));
+    SquareMatrix* new = newMatrix(dim);
 
     // Allocate space for array
     new->array = calloc(sizeof(double), (size_t)(dim * dim));
