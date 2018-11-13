@@ -64,13 +64,6 @@ int main(int argc, char** argv)
                 
                 break;
             }
-            /*
-            case 'c': // colour enabled
-            {
-                colour = 1;
-                break;
-            }
-            */
             case 'T': // Timing mode enabled
             {
                 timingMode = 1;
@@ -115,22 +108,19 @@ int main(int argc, char** argv)
         
         // Open files
         FILE* timingFile = fopen(timingFileName, "ab+");
-            
+        
+        if (timingFile == NULL)
+        {
+            // Could not read file so throw error
+            char* args[1] = { timingFileName };
+            throw(FileException, args);
+        } 
     
         printf("Begining computations:\n");
     
         // Iterate through dimensions in steps of dimStep
         for (int i = 1; i <= dim / dimStep; i++)
         {
-            
-            if (timingFile == NULL)
-            {
-                // Could not read file so throw error
-                char* args[1] = { timingFileName };
-                throw(FileException, args);
-            }
-            
-        
             // Get the new dimension
             int ndim = i * dimStep;
             
@@ -159,16 +149,12 @@ int main(int argc, char** argv)
             time = (double)(finish.tv_sec - start.tv_sec);
             time += (double)(finish.tv_nsec - start.tv_nsec) / 1E9;
             
-            //printf("Naive iterate:\t\t\t%f s\n", time);
             fprintf(timingFile, "%f,", time);
-
 
             //
             //  Parallel iterate
             //
             
-
-       
             // Loading bar stuff
             int lbarSize = 24;
             char full[lbarSize];
@@ -179,11 +165,6 @@ int main(int argc, char** argv)
                 full[n] = '#';
                 empty[n] = ' ';
             }
-            
-            //
-       
-       
-       
             // Go through each thread number
             for (int j = 1; j < thrNum; j++)
             {
@@ -196,10 +177,6 @@ int main(int argc, char** argv)
                     ndim, j, prog1, full, prog2, empty, prog3);
                 fflush(stdout);
                 
-                  //  fprintf(stderr, "Progress: |%.*s%.*s| %02d\r", i, s1, n-i-1, s2, i);
-               
-                
-            
                 // Initialise matricies
                 old = resizeMatrix(inputArray, ndim);
                 new = resizeMatrix(inputArray, ndim);
@@ -235,11 +212,6 @@ int main(int argc, char** argv)
     }
     else // Compute old and display
     {
-        // Print input array
-        //printf("Input array:\n");    
-        //printMatrix(inputArray, colour);
-        //printf("\n");
-    
         printf("Computation begun...");
     
         // Compute new values
@@ -247,7 +219,6 @@ int main(int argc, char** argv)
         
         printf("Done.\nWriting to file...");
         
-        // TODO: Write to results file
         FILE* outFile = fopen(outFileName, "ab+");
         
         if (outFile == NULL)
@@ -261,10 +232,6 @@ int main(int argc, char** argv)
         fclose(outFile);
         
         printf("Done.\n");
-        
-        // Print new array
-        //printf("Result:\n");
-        //printMatrix(new, colour);
     }
     
     // Exit the program Successfully

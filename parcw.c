@@ -1,17 +1,14 @@
-
-
 #include "parcw.h"
-
 
 /*
 -----------------------------------------------------------------------------
     Contents
 
-    * ~Ln18  Implementation 
-    * ~Ln311 Signaller
-    * ~Ln389 Array data structure
-    * ~Ln478 File read and write
-    * ~Ln640 Error handling
+    * ~Ln15  Implementation 
+    * ~Ln309 Signaller
+    * ~Ln387 Array data structure
+    * ~Ln507 File read and write
+    * ~Ln618 Error handling
 
 */
 /*
@@ -103,8 +100,7 @@ void partitionBlocks(ThreadArgs* args, int thrNum, int dim)
 }
 
 // Parellel version of iterate
-void parIterate(SquareMatrix* old, SquareMatrix* new, 
-    double prec, int thrNum)
+void parIterate(SquareMatrix* old, SquareMatrix* new, double prec, int thrNum)
 {
     // For readability
     int dim = old->dim;
@@ -135,7 +131,6 @@ void parIterate(SquareMatrix* old, SquareMatrix* new,
         
         // Assign master signaller
         args[i].signalMaster = master;
-        
     }
     
     // partition data
@@ -309,7 +304,6 @@ void naiveIterate(SquareMatrix* pOld, SquareMatrix* pNew, double prec)
     // loop if old and new are too different
     while (maxDiff > prec);
 }
-
 
 /*
 --------- Signaller ------------------------------------------------------------
@@ -591,85 +585,6 @@ SquareMatrix* readMatrix(int dim, char* fileName)
     
     return matrix;
 }
-/*
-// Takes a float and gives rgb values for rainbow colouring (basically
-// an inferior hsv -> rgb converter)
-RGB rgbRainbow(double x)
-{
-    //Small scalling factor for colouring
-    x *= 0.2;
-
-    RGB rgb;
-
-    int section = (int)(x * 6);
-    double frac = (x * 6) - (double)((long)(x * 6));
-
-    switch (section % 6)
-    {
-        case 0:
-            rgb.r = 255;
-            rgb.g = (int)(255 * frac);
-            rgb.b = 0;
-            break;
-        case 1:
-            rgb.r = (int)(255 * (1.0 - frac));
-            rgb.g = 255;
-            rgb.b = 0;
-            break;
-        case 2:
-            rgb.r = 0;
-            rgb.g = 255;
-            rgb.b = (int)(255 * frac);
-            break;
-        case 3:
-            rgb.r = 0;
-            rgb.g = (int)(255 * (1.0 - frac));
-            rgb.b = 255;
-            break;
-        case 4:
-            rgb.r = (int)(255 * frac);
-
-            rgb.g = 0;
-            rgb.b = 255;
-            break;
-        case 5:
-            rgb.r = 255;
-            rgb.g = 0;
-            rgb.b = (int)(255 * (1.0 - frac));
-            break;
-    }
-    
-    return rgb;
-}
-
-// Prints the given matrix
-void printMatrix(SquareMatrix* matrix, int isColour)
-{
-    for (int i = 0; i < matrix->dim; i++)
-    {
-        for (int j = 0; j < matrix->dim; j++)
-        {    
-            if (isColour)
-            {
-                // We colour them based on their value
-                // Really only works on doubles between 0.0 and 1.0
-                RGB rgb = rgbRainbow(matrix->array[i * (matrix->dim) + j]);
-                
-                printf(
-                    "\033[38;2;%d;%d;%dm%f\x1b[0m ", 
-                    rgb.r, rgb.g, rgb.b, 
-                    matrix->array[i * (matrix->dim) + j]);
-            }
-            else // We have decided a boring and monochrome output
-            {
-                printf("%f ", matrix->array[i * (matrix->dim) + j]);
-            }
-        }
-        
-        printf("\n");
-    }
-}*/
-
 
 // Prints the matrix
 void printMatrix(SquareMatrix* matrix)
@@ -703,7 +618,6 @@ void fprintMatrix(FILE* file, SquareMatrix* matrix)
 ----- Error handling -----------------------------------------------------------
 */
 
-
 // Prints error message (or Success) with arguments and exits
 void throw(Error e, char** args)
 {
@@ -734,7 +648,7 @@ void throw(Error e, char** args)
             break;
             
         case BoundaryException:
-            printf("Error: Thread partition out of bounds");
+            printf("Error: Thread partition out of bounds.\n");
             break;
     }
     

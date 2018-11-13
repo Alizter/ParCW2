@@ -10,7 +10,9 @@
 #include <pthread.h>
 #include <sys/sysinfo.h>
 
-// Array data structure
+/*
+---- Array data structure ------------------------------------------------------
+*/
 
 typedef struct
 {
@@ -26,7 +28,9 @@ int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b);
 int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec);
 
 
-// Signaller
+/*
+-------- Signaller -------------------------------------------------------------
+*/
 
 // "Signaller" data structure like a reverse semaphore
 // instead of checking if the counter >0 we check if
@@ -52,24 +56,13 @@ void destroySignaller(Signaller* s);
 void waitFor(Signaller* s);
 void signal(Signaller* s);
 
-
-// File read and write
-
-// Small sruct for passing around rgb values
-/*typedef struct
-{
-    int r,g,b;
-} RGB;
-*/
 SquareMatrix* readMatrix(int dim, char* fileName);
-//RGB rgbRainbow(double x);
-//void printMatrix(SquareMatrix* matrix, int colour);
 void printMatrix(SquareMatrix* matrix);
 void fprintMatrix(FILE* file, SquareMatrix* matrix);
 
-
-
-// Implementations
+/*
+------- Implementations --------------------------------------------------------
+*/
 
 // Data structure that gets passed to thread
 typedef struct
@@ -87,32 +80,15 @@ typedef struct
     SquareMatrix** new;         // A pointer to a pointer to the new matrix
 } ThreadArgs;
 
-
 int isDiff(double precision, SquareMatrix* old, SquareMatrix* new);
 void naiveIterate(SquareMatrix* old, SquareMatrix* new, double prec);
-
-void parIterate(SquareMatrix* old, SquareMatrix* new, 
-    double prec, int threadNum);
-
+void parIterate(SquareMatrix* old, SquareMatrix* new, double prec, int thrNum);
 void* threadWork(void* args);
 void partitionBlocks(ThreadArgs *pargs, int thrNum, int dim);
 
-
-
-// In order to pass this function to a pthread we need it to have signature 
-// void* foo(void*); This will be done by taking the arguments of average
-// and squishing them into a struct.
-
-typedef struct
-{
-    int* dim;
-    int* i;
-    int* j;
-    double* old;
-    double* new;
-} AvgArgs;
-
-// Error handling
+/*
+-------- Error handling --------------------------------------------------------
+*/
 
 typedef enum
 {
@@ -126,7 +102,5 @@ typedef enum
 } Error;
 
 void throw(Error e, char** args);
-
-
 
 #endif

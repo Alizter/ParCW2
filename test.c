@@ -1,10 +1,14 @@
 /* 
     Unit testing
     
-We unit test using the minimalist unit testing MinUnit which can be found here:
+    We unit test using the minimalist unit testing MinUnit which can be 
+    found here:
 
     http://www.jera.com/techinfo/jtns/jtn002.html
     
+    
+    The main function is at the end and simply runs all the unit tests 
+    (functions that begin with test_...).
 */
 
 /* MinUnit */
@@ -16,8 +20,7 @@ extern int tests_run;
 
 #include "parcw.h"
 
-
-
+// A count for the number of tests run
 int tests_run = 0;
 
 /*
@@ -249,11 +252,8 @@ static char* test_naiveIterate()
     naiveIterate(old, new, prec);
     
     mu_assert("naiveIterate failed", eqPrecSquareMatrix(new, expected, prec));
-    
-
-    
+        
     return 0;
-    
 }
 
 
