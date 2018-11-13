@@ -166,11 +166,11 @@ int main(int argc, char** argv)
                 empty[n] = ' ';
             }
             // Go through each thread number
-            for (int j = 1; j < thrNum; j++)
+            for (int j = 1; j <= thrNum; j++)
             {
                 int total = thrNum * dim;
                 int prog1 =  lbarSize * (ndim * thrNum + j) / total;
-                int prog2 = lbarSize - prog1 ;//- 1;
+                int prog2 = lbarSize - prog1;
                 int prog3 = 100 * (ndim * thrNum + j) / total;
             
                 printf("\rDim: %d Threads: %d [%.*s%.*s] %02d%%", 
