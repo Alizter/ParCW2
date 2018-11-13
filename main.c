@@ -168,6 +168,9 @@ int main(int argc, char** argv)
             // Go through each thread number
             for (int j = 1; j < thrNum; j++)
             {
+                printf("\rDim: %d\tThreads: %d", ndim, j);
+                fflush(stdout);
+            
                 // Initialise matricies
                 old = resizeMatrix(inputArray, ndim);
                 new = resizeMatrix(inputArray, ndim);
