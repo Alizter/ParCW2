@@ -405,14 +405,11 @@ SquareMatrix* duplicateMatrix(SquareMatrix* old)
     new->array = calloc(sizeof(double), (size_t)(old->dim * old->dim));
     
     // Copy array to new array
-    memcpy(
-        new->array, 
-        old->array, 
+    memcpy(new->array, old->array, 
         sizeof(double) * (size_t)(old->dim * old->dim));
     
     // Copy dims
     new->dim = old->dim;
-
     
     return new;
 }
@@ -437,6 +434,32 @@ SquareMatrix* newMatrix(int dim)
     matrix->dim = dim;        
     
     return matrix;
+}
+
+// Resizes matrix usually meant for making matrix smaller than original
+// Does not preserve any order simply shifts entries to fit new one
+// if resized bigger adds zeros
+SquareMatrix* resizeMatrix(SquareMatrix* old, int dim)
+{
+    if (dim < old->dim)
+    {
+        SquareMatrix* new = duplicateMatrix(old);
+        new->dim = dim;
+        return new;
+    }
+    
+    // dim >= old->dim
+    // Create new square matrix
+    SquareMatrix* new = malloc(sizeof(SquareMatrix));
+
+    // Allocate space for array
+    new->array = calloc(sizeof(double), (size_t)(dim * dim));
+    
+    // Copy old entries onto new matrix
+    memcpy(new->array, old->array, 
+        sizeof(double) * (size_t)(old->dim * old->dim));
+        
+    return new;
 }
 
 // Equality function for two square matricies
@@ -568,7 +591,7 @@ SquareMatrix* readMatrix(int dim, char* fileName)
     
     return matrix;
 }
-
+/*
 // Takes a float and gives rgb values for rainbow colouring (basically
 // an inferior hsv -> rgb converter)
 RGB rgbRainbow(double x)
@@ -645,8 +668,36 @@ void printMatrix(SquareMatrix* matrix, int isColour)
         
         printf("\n");
     }
+}*/
+
+
+// Prints the matrix
+void printMatrix(SquareMatrix* matrix)
+{
+    for (int i = 0; i < matrix->dim; i++)
+    {
+        for (int j = 0; j < matrix->dim; j++)
+        {   
+        	printf("%f ", matrix->array[i * (matrix->dim) + j]);    
+        }
+        
+        printf("\n");
+    }
 }
 
+// print matrix to file
+void fprintMatrix(FILE* file, SquareMatrix* matrix)
+{
+    for (int i = 0; i < matrix->dim; i++)
+    {
+        for (int j = 0; j < matrix->dim; j++)
+        {   
+        	fprintf(file, "%f ", matrix->array[i * (matrix->dim) + j]);    
+        }
+        
+        fprintf(file, "\n");
+    }
+}
 
 /*
 ----- Error handling -----------------------------------------------------------

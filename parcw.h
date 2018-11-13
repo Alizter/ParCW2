@@ -21,8 +21,10 @@ typedef struct
 SquareMatrix* duplicateMatrix(SquareMatrix* old);
 void freeMatrix(SquareMatrix* matrix);
 SquareMatrix* newMatrix(int dim);
+SquareMatrix* resizeMatrix(SquareMatrix* old, int dim);
 int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b);
 int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec);
+
 
 // Signaller
 
@@ -54,16 +56,16 @@ void signal(Signaller* s);
 // File read and write
 
 // Small sruct for passing around rgb values
-typedef struct
+/*typedef struct
 {
     int r,g,b;
 } RGB;
-
+*/
 SquareMatrix* readMatrix(int dim, char* fileName);
-RGB rgbRainbow(double x);
-void printMatrix(SquareMatrix* matrix, int colour);
-
-
+//RGB rgbRainbow(double x);
+//void printMatrix(SquareMatrix* matrix, int colour);
+void printMatrix(SquareMatrix* matrix);
+void fprintMatrix(FILE* file, SquareMatrix* matrix);
 
 
 
