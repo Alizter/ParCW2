@@ -117,6 +117,8 @@ int main(int argc, char** argv)
         FILE* timingFile = fopen(timingFileName, "ab+");
             
     
+        printf("Begining computations:\n");
+    
         // Iterate through dimensions in steps of dimStep
         for (int i = 1; i <= dim / dimStep; i++)
         {
@@ -164,12 +166,39 @@ int main(int argc, char** argv)
             //
             //  Parallel iterate
             //
+            
+
+       
+            // Loading bar stuff
+            int lbarSize = 24;
+            char full[lbarSize];
+            char empty[lbarSize];
+            
+            for (int n = 0; n < lbarSize; n++)
+            {
+                full[n] = '#';
+                empty[n] = ' ';
+            }
+            
+            //
+       
+       
        
             // Go through each thread number
             for (int j = 1; j < thrNum; j++)
             {
-                printf("\rDim: %d\tThreads: %d", ndim, j);
+                int total = thrNum * dim;
+                int prog1 =  lbarSize * (ndim * thrNum + j) / total;
+                int prog2 = lbarSize - prog1 ;//- 1;
+                int prog3 = 100 * (ndim * thrNum + j) / total;
+            
+                printf("\rDim: %d Threads: %d [%.*s%.*s] %02d%%", 
+                    ndim, j, prog1, full, prog2, empty, prog3);
                 fflush(stdout);
+                
+                  //  fprintf(stderr, "Progress: |%.*s%.*s| %02d\r", i, s1, n-i-1, s2, i);
+               
+                
             
                 // Initialise matricies
                 old = resizeMatrix(inputArray, ndim);
@@ -202,6 +231,7 @@ int main(int argc, char** argv)
         }
         
         fclose(timingFile);
+        printf("\n");
     }
     else // Compute old and display
     {
