@@ -1,0 +1,10 @@
+#!/bin/bash
+
+for i in {1..10}
+do
+    for j in {1..24}
+    do
+        echo "$(($i * 20))"
+        ./main array4 -T -t $j -p 1E-10 -d $(($i * 20))
+    done
+done
