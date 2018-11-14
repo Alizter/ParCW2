@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
     // Command line options
     int c;    
-    while ((c = getopt(argc, argv, "d:o:p:t:TP")) != -1)
+    while ((c = getopt(argc, argv, "d:o:p:t:T")) != -1)
     {
         switch(c)
         {            
@@ -119,16 +119,13 @@ int main(int argc, char** argv)
         printf("Begining computations:\n");
     
         // Iterate through dimensions in steps of dimStep
-        for (int i = 1; i <= dim / dimStep; i++)
-        {
-            // Get the new dimension
-            int ndim = i * dimStep;
-            
+        for (int i = 1; i <= dim; i += dimStep)
+        {            
             // write dimension
-            fprintf(timingFile, "%d,", ndim);
+            fprintf(timingFile, "%d,", i);
             
-            old = resizeMatrix(inputArray, ndim);
-            new = resizeMatrix(inputArray, ndim);
+            old = resizeMatrix(inputArray, i);
+            new = resizeMatrix(inputArray, i);
         
             struct timespec start, finish;
             double time;
@@ -169,17 +166,17 @@ int main(int argc, char** argv)
             for (int j = 1; j <= thrNum; j++)
             {
                 int total = thrNum * dim;
-                int prog1 =  lbarSize * (ndim * thrNum + j) / total;
+                int prog1 =  (lbarSize * ((i - 1) * thrNum + j * dimStep)) / total;
                 int prog2 = lbarSize - prog1;
-                int prog3 = 100 * (ndim * thrNum + j) / total;
+                int prog3 = (100 * ((i - 1) * thrNum + j * dimStep)) / total;
             
-                printf("\rDim: %d Threads: %d [%.*s%.*s] %02d%%", 
-                    ndim, j, prog1, full, prog2, empty, prog3);
+                printf("\rDim: %d Threads: %d [%.*s%.*s] %3d%%", 
+                    i, j, prog1, full, prog2, empty, prog3);
                 fflush(stdout);
                 
                 // Initialise matricies
-                old = resizeMatrix(inputArray, ndim);
-                new = resizeMatrix(inputArray, ndim);
+                old = resizeMatrix(inputArray, i);
+                new = resizeMatrix(inputArray, i);
                 
                 // Start timing
                 clock_gettime(CLOCK_MONOTONIC, &start);

@@ -97,8 +97,7 @@ typedef enum
     ArrayReadFailure = -4,      // Program couldn't read array
     PrecisionException = -5,    // Program precision too small
     DimensionException = -6,    // Program dimension too small
-    ThreadNumException = -7,    // Program threadNum too small
-    BoundaryException = -8      // Thread allocation outside of boundary
+    ThreadNumException = -7    // Program threadNum too small
 } Error;
 
 void throw(Error e, char** args);

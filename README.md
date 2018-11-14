@@ -9,13 +9,30 @@ See pdf attached.
 ```
 ./main [options] fileName
     options:
-        -c            Colours output of arrays
-        -d dim        dimension of square array (i.e. for 25 entries, 5x5)    
-        -p prec       Will run computation with precision given
-        -t num        Will run main computation with "num" many threads.
-        -T fileName   Activate timing mode and specify where results go
-        -o fileName   Output file name (default 'results')
+        -d dim        dimension of square array (default: 5)    
+        -p prec       precision of computation (default: 1E-3)
+        -t num        run main computation with "num" many threads (default: 4)
+        -o fileName   output file name (default: "results")
+        -T            activate timing mode
 ```
+
+### Timing mode
+
+In "timing mode" the program will run several versions of the computation with
+varying parameters and record the elapsed time for each computation in a file
+called "timings".
+
+The program will iterate upto and including the threads specified, for each
+size of array. For example running `./main -T array3 -d 20 -t 8` has the
+following output:
+
+```
+
+```
+
+---
+
+
  The program will read the first `dim * dim` entries of this file and take the
  rest as zero.
  

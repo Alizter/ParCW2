@@ -57,14 +57,6 @@ void* worker(void* vargs)
                 maxDiff = fmax(maxDiff, fabs(
                     (*args->new)->array[k] - (*args->old)->array[k]));
             }
-            else
-            {
-                // Throw boundary exception
-                // We want the error message to print as much information as
-                // possible about the circumstance
-                
-                
-            }
         }
         
         // Set max diff
@@ -259,8 +251,7 @@ void naiveIterate(SquareMatrix* pOld, SquareMatrix* pNew, double prec)
     SquareMatrix* new = pNew;
     
     do
-    {
-    
+    {    
         if (swapFlag)
         {
             // Swap pointers
@@ -478,7 +469,6 @@ int eqSquareMatrix(SquareMatrix* a, SquareMatrix* b)
     return 1;
 }
 
-
 // Equality for two matrices within toleance
 int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec)
 {
@@ -645,10 +635,6 @@ void throw(Error e, char** args)
             
         case ThreadNumException:
             printf("Error: Given thread number is too small.\n");
-            break;
-            
-        case BoundaryException:
-            printf("Error: Thread partition out of bounds.\n");
             break;
     }
     
