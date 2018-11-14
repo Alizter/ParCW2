@@ -16,6 +16,23 @@ See pdf attached.
         -T num        activate timing mode with dim stepsize of num (default: 5)
 ```
 
+The program will read the first `dim * dim` entries of the file. See files named
+array* for more examples.
+
+## How to make and run
+
+ 1. Compile using `make`.
+ 2. Run `./main fileName
+  
+ For example the file `array1` has 25 entries, so on two threads 
+ it can be ran as:
+ 
+ ```
+    ./main -d 5 -p 1E-3 -t 2 array1
+ ```
+
+The result will be outputted to a file called results.
+
 ### Timing mode
 
 In "timing mode" the program will run several versions of the computation with
@@ -68,54 +85,41 @@ The rest of the coloumns are the results for parallelIterate for thread numbers
 
  `num` is the number (>0) of threads (i.e. cores) to use
  
- In timing mode the program will show sequential and parallel implementation
- timings for thread numbers upto that specified.
- 
- For example
- 
- ```
-    $ ./main array2 -T -t 16 -p 1E-6
-    Naive iterate:                  0.000040 seconds
-    Parallel iterate 1 threads:     0.009880 seconds
-    Parallel iterate 2 threads:     0.009270 seconds
-    Parallel iterate 3 threads:     0.008920 seconds
-    Parallel iterate 4 threads:     0.008920 seconds
-    Parallel iterate 5 threads:     0.008200 seconds
-    Parallel iterate 6 threads:     0.008760 seconds
-    Parallel iterate 7 threads:     0.009780 seconds
-    Parallel iterate 8 threads:     0.008780 seconds
-    Parallel iterate 9 threads:     0.008740 seconds
-    Parallel iterate 10 threads:    0.008510 seconds
-    Parallel iterate 11 threads:    0.008510 seconds
-    Parallel iterate 12 threads:    0.010450 seconds
-    Parallel iterate 13 threads:    0.011230 seconds
-    Parallel iterate 14 threads:    0.010090 seconds
-    Parallel iterate 15 threads:    0.011050 seconds
-    Parallel iterate 16 threads:    0.010850 seconds
- ```
- 
- By default:
-    * output will not be coloured.
-    * dim will be 5
-    * prec will be 1E-3
-    * num will be 4
-    * timing mode will be off
 
-## How to make and run
-
- 1. Compile using `make`.
- 2. Run `./main fileName
-  
- For example the file `array1` has 25 entries, so on two threads 
- it can be ran as:
- 
- ```
-    ./main -d 5 -p 1E-3 -t 2 array1
- ```
  
 ## Unit testing
-In order to maintain the correctness of the program, we have implemented unit tests. These can be run by running `make test` which will go ahead and run the tests after compiling them. 
- 
+In order to maintain the correctness of the program, we have implemented unit 
+tests. These can be run by running `make test` which will go ahead and run the 
+tests after compiling them.
+
+```
+~/parcw$ make test
+gcc -o test test.o parcw.o -g -pthread -Wall -Wconversion -Wextra -lm -l pthread -lrt -std=gnu99
+./test
+ALL TESTS PASSED
+Tests run: 8
+```
+
+## Performance
+
+Using the timing function we analysed the speedup given by our parallel 
+implementation. Due to the long job queue and large nature of our timings we
+didn't conduct this test on Balena but on another machine called Brachiosaurus.
+
+Here is a specification of Brachiosaurus:
+
+Processor           Intel(R) Xeon(R) CPU E5620 @ 2.40GHz
+Memory              24670MB
+Machine Type        Desktop
+Operating System	Ubuntu 18.10
+
+Kernel	            Linux 4.18.0-10-generic (x86_64)
+Version	            #11-Ubuntu SMP Thu Oct 11 15:13:55 UTC 2018
+Distribution	    Ubuntu 18.10
+Computer Name	    brachiosaurus
+
+Brachiosaurus has 16 cores (without hyperthreading). 
+
 ## Testing on Balena
 
 Here are the results of a test done on Balena:
