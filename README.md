@@ -13,7 +13,7 @@ See pdf attached.
         -p prec       precision of computation (default: 1E-3)
         -t num        run main computation with "num" many threads (default: 4)
         -o fileName   output file name (default: "results")
-        -T            activate timing mode
+        -T num        activate timing mode with dim stepsize of num (default: 5)
 ```
 
 ### Timing mode
@@ -23,12 +23,39 @@ varying parameters and record the elapsed time for each computation in a file
 called "timings".
 
 The program will iterate upto and including the threads specified, for each
-size of array. For example running `./main -T array3 -d 20 -t 8` has the
+size of array. For example running `./main -T 5 array3 -d 20 -t 8` has the
 following output:
 
 ```
+$ ./main -T 5 array3 -d 70 -t 8
+Begining computations:
+Dim: 70 Threads: 8 [########################] 100.000%
+Program finished.
+```
+
+And the "timings" file contains:
 
 ```
+5,0.000004,0.000344,0.001467,0.001364,0.002263,0.005386,0.005458,0.002701,0.003082,
+10,0.000071,0.000656,0.006590,0.003552,0.004665,0.005084,0.004887,0.007800,0.006083,
+15,0.000523,0.003696,0.011480,0.030216,0.013309,0.016665,0.015112,0.017343,0.033272,
+20,0.001139,0.003245,0.010499,0.011186,0.013485,0.022314,0.021256,0.023817,0.022369,
+25,0.007489,0.044592,0.032982,0.032572,0.066525,0.041665,0.043887,0.048666,0.071515,
+30,0.009290,0.057037,0.057547,0.042976,0.065891,0.091048,0.083380,0.068871,0.066387,
+35,0.019096,0.050385,0.070463,0.065512,0.103745,0.080462,0.117100,0.130738,0.166892,
+40,0.027114,0.119410,0.098411,0.091749,0.103043,0.145344,0.106505,0.150458,0.140986,
+45,0.061985,0.230154,0.162608,0.237613,0.203169,0.260442,0.217536,0.232194,0.305000,
+50,0.076757,0.107489,0.133702,0.171697,0.241647,0.247685,0.281243,0.304543,0.224425,
+55,0.143738,0.283375,0.504043,0.480490,0.763469,0.516239,0.516945,0.571810,0.691818,
+60,0.209259,0.288329,0.264705,0.351721,0.392368,0.365421,0.387223,0.397689,0.426030,
+65,0.293432,0.451855,0.435839,0.534228,0.572226,0.568549,0.553841,0.621455,0.793791,
+70,0.206570,0.320209,0.295400,0.324676,0.404540,0.371016,0.510100,0.478557,0.483595,
+```
+
+Now as you can see the first coloumn is the dimension that was computed on.
+The second coloumn is the time for the naiveIterate function to compute.
+The rest of the coloumns are the results for parallelIterate for thread numbers
+1 to 8 (which was specified).
 
 ---
 

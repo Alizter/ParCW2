@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     int dim = 5;
     double inputPrecision = 1E-3;
     int thrNum = 4;
+    int dimStep = 5;
     
     int timingMode = 0;
     char* outFileName = "results";
@@ -26,7 +27,7 @@ int main(int argc, char** argv)
 
     // Command line options
     int c;    
-    while ((c = getopt(argc, argv, "d:o:p:t:T")) != -1)
+    while ((c = getopt(argc, argv, "d:o:p:t:T:")) != -1)
     {
         switch(c)
         {            
@@ -67,6 +68,14 @@ int main(int argc, char** argv)
             case 'T': // Timing mode enabled
             {
                 timingMode = 1;
+                
+                dimStep = atoi(optarg);
+                
+                if (dimStep <= 0)
+                {
+                    throw(DimStepException, NULL);
+                }
+                
                 break;
             }
             case 'o': // Output file specified
@@ -103,9 +112,7 @@ int main(int argc, char** argv)
     // different values of dim upto and including one specified. We will write
     // the results to a csv file 
     if (timingMode)
-    {
-        int dimStep = 5;
-        
+    {   
         // Open files
         FILE* timingFile = fopen(timingFileName, "ab+");
         
@@ -119,7 +126,7 @@ int main(int argc, char** argv)
         printf("Begining computations:\n");
     
         // Iterate through dimensions in steps of dimStep
-        for (int i = 1; i <= dim; i += dimStep)
+        for (int i = dimStep; i <= dim; i += dimStep)
         {            
             // write dimension
             fprintf(timingFile, "%d,", i);
@@ -165,12 +172,13 @@ int main(int argc, char** argv)
             // Go through each thread number
             for (int j = 1; j <= thrNum; j++)
             {
-                int total = thrNum * dim;
-                int prog1 =  (lbarSize * ((i - 1) * thrNum + j * dimStep)) / total;
+                double progress = fmin(1.0, ((double)((i-1) * thrNum + j) / 
+                    ((thrNum) * (dim - dim % dimStep))));
+                int prog1 = (int)(progress * lbarSize);
                 int prog2 = lbarSize - prog1;
-                int prog3 = (100 * ((i - 1) * thrNum + j * dimStep)) / total;
+                double prog3 = 100 * progress;
             
-                printf("\rDim: %d Threads: %d [%.*s%.*s] %3d%%", 
+                printf("\rDim: %d Threads: %d [%.*s%.*s] %3.3f%%", 
                     i, j, prog1, full, prog2, empty, prog3);
                 fflush(stdout);
                 

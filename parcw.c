@@ -5,10 +5,10 @@
     Contents
 
     * ~Ln15  Implementation 
-    * ~Ln309 Signaller
-    * ~Ln387 Array data structure
-    * ~Ln507 File read and write
-    * ~Ln618 Error handling
+    * ~Ln300 Signaller
+    * ~Ln378 Array data structure
+    * ~Ln497 File read and write
+    * ~Ln608 Error handling
 
 */
 /*
@@ -626,15 +626,19 @@ void throw(Error e, char** args)
             break;
             
         case PrecisionException:
-            printf("Error: Given precision is too small.\n");
+            printf("Error: Given precision is too small. or invalid\n");
             break;
             
         case DimensionException:
-            printf("Error: Given dimension is too small.\n");
+            printf("Error: Given dimension is too small or invalid.\n");
             break;
             
         case ThreadNumException:
-            printf("Error: Given thread number is too small.\n");
+            printf("Error: Given thread number is too small or invalid.\n");
+            break;
+            
+        case DimStepException:
+            printf("Error: Given dimension step in parameter -T invalid.\n");
             break;
     }
     
