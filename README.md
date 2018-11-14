@@ -108,6 +108,7 @@ didn't conduct this test on Balena but on another machine called Brachiosaurus.
 
 Here is a specification of Brachiosaurus:
 
+```
 Processor           Intel(R) Xeon(R) CPU E5620 @ 2.40GHz
 Memory              24670MB
 Machine Type        Desktop
@@ -117,7 +118,7 @@ Kernel	            Linux 4.18.0-10-generic (x86_64)
 Version	            #11-Ubuntu SMP Thu Oct 11 15:13:55 UTC 2018
 Distribution	    Ubuntu 18.10
 Computer Name	    brachiosaurus
-
+```
 Brachiosaurus has 16 cores (without hyperthreading). 
 
 ## Testing on Balena
