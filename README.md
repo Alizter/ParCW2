@@ -109,17 +109,41 @@ didn't conduct this test on Balena but on another machine called Brachiosaurus.
 Here is a specification of Brachiosaurus:
 
 ```
-Processor           Intel(R) Xeon(R) CPU E5620 @ 2.40GHz
-Memory              24670MB
-Machine Type        Desktop
-Operating System	Ubuntu 18.10
+Processor         |  Intel(R) Xeon(R) CPU E5620 @ 2.40GHz
+Memory            |  24670MB
+Machine Type      |  Desktop
+Operating System  |  Ubuntu 18.10
 
-Kernel	            Linux 4.18.0-10-generic (x86_64)
-Version	            #11-Ubuntu SMP Thu Oct 11 15:13:55 UTC 2018
-Distribution	    Ubuntu 18.10
-Computer Name	    brachiosaurus
+Kernel	          |  Linux 4.18.0-10-generic (x86_64)
+Version	          |  #11-Ubuntu SMP Thu Oct 11 15:13:55 UTC 2018
+Distribution	  |  Ubuntu 18.10
+Computer Name	  |  brachiosaurus
 ```
-Brachiosaurus has 16 cores (without hyperthreading). 
+Brachiosaurus has 16 cores. 
+
+Now running `./main -T -d 300 -p 1E-10 -t 32 array4` on Brachiosaurus gave me
+the following results which can be accessed via the csv file: 
+"Brachiosaurus results - Sheet3.csv" and the speedups computed from this can 
+be accessed from the following pdf: "Brachiosaurus Results - Sheet 5.pdf". 
+
+Note: All pdfs are in parcw/appendix/
+
+We also plotted this data in Mathematica whose graphs can be accessed via the 
+files "brachio_plot_*.pdf" where there are three directions, top, default and 
+front, to choose from.
+
+Clearly it is seen that even with more threads than cores, the speedup was 
+higher. This initially looked like an absurd result but it makes sense. My 
+explanation is due to hyperthreading taking place which allows "32 core" like 
+behaviour although we suspect that it peaks at around 24 cores.
+
+Note that performance is also better when the thread number is a multiple of 8.
+
+We investigate further, this time on Brachiosaurus but with upto 64 cores.
+
+
+
+
 
 ## Testing on Balena
 
