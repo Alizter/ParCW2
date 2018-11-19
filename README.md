@@ -121,7 +121,7 @@ Computer Name	  |  brachiosaurus
 ```
 Brachiosaurus has 16 cores. 
 
-Now running `./main -T -d 300 -p 1E-10 -t 64 array4` on Brachiosaurus gave me
+Now running `./main -T 5 -d 300 -p 1E-10 -t 64 array4` on Brachiosaurus gave me
 the following results which can be accessed via the csv file:
 
     'Brachiosaurus Raw timings.csv'
@@ -131,7 +131,7 @@ name before the extension.
 
 **Note: All pdfs and csvs are in parcw/appendix/**
 
-## Speedup
+### Speedup
 
 Firstly we investigate the speedup associated to our data. Speedup is 
 calculated as the sequential time divided by the parallel time. Our 'naive 
@@ -176,8 +176,16 @@ So it would seem the optimum configuration with hyperthreading would be the
 number of cores times 2 minus 1. Without hyperthreading it seems to be number 
 of cores minus 1.
 
+### Efficiency
 
+We calculated the efficiency from the results. Simply as the speedup divided 
+by the number of threads. We get the following data which can be found in 
+'Brachiosaurus Efficiency.csv' (or .pdf).
 
+Efficiency seems to come in homogenous chunks of size 8. The most efficient is 
+1-8 threads, followed by 9-16, and so on. This makes sense due to lower thread 
+counts spending less time switching. We note that it is usually expected 50% 
+efficiency for a parallel program and this seems to be the case.
 
 ## Balena vs Brachiosaurus
 
@@ -185,7 +193,9 @@ For reference here is a comparision of Balena and Brachiosaurus. Note due to
 constraints on the Balena queue, spending time testing on Brachiosaurus was 
 the more sensible option.
 
-# TODO: RERUN COMPARISON TESTS 
+Note that these are old results, and the syntax of the program may have changed 
+slightly. But that is not important, what is important is the comparison of the 
+timings.
 
 ## Testing on Brachiosaurus
 ```
