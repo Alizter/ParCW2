@@ -19,9 +19,10 @@ int main(int argc, char **argv)
     int myrank; // rank of mpi process
     int nproc; // number of processors
     
-    
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // allocate space for rank
-    MPI_Comm_size(MPI_COMM_WORLD, &nproc); // allocate space for number of processor
+    // allocate space for rank
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank); 
+    // allocate space for number of processor
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc); 
 
     if (myrank == 0) // if the main process
     {
@@ -30,7 +31,7 @@ int main(int argc, char **argv)
     
     // for the communicator world put a barrier
     // this ensures that main reports is printed first
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_`COMM_WORLD);
 
     // name length allocated
     int namelen = MPI_MAX_PROCESSOR_NAME;
