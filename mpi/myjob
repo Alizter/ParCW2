@@ -4,10 +4,10 @@
 
 #SBATCH --job-name=HelloMPI
 
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 
 
-#SBATCH --ntasks-per-node=16
+#SBATCH --ntasks-per-node=64
 #SBATCH --time=00:01:00
 
 #SBATCH --output=myjob.out
