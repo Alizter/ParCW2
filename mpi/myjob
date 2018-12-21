@@ -16,4 +16,6 @@ module load slurm
 module load intel/compiler
 module load openmpi/intel
 
-mpirun -np $SLURM_NTASKS ./hellompi
+make
+
+mpirun -np $SLURM_NTASKS ./test
