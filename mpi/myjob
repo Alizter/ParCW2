@@ -1,0 +1,19 @@
+#!/bin/sh
+#SBATCH --account=cm30225
+#SBATCH --partition=teaching
+
+#SBATCH --job-name=HelloMPI
+
+#SBATCH --nodes=2
+
+
+#SBATCH --ntasks-per-node=16
+#SBATCH --time=00:01:00
+
+. /etc/profile.d/modules.sh
+module purge
+module load slurm
+module load intel/compiler
+module load openmpi/intel
+
+mpirun -np $SLURM_NTASKS ./hellompi
