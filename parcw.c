@@ -1,17 +1,6 @@
 #include "parcw.h"
 
 /*
------------------------------------------------------------------------------
-    Contents
-
-    * ~Ln15  Implementation 
-    * ~Ln300 Signaller
-    * ~Ln378 Array data structure
-    * ~Ln497 File read and write
-    * ~Ln608 Error handling
-
-*/
-/*
 ---- Implementations -----------------------------------------------------------
 */
 
@@ -502,79 +491,6 @@ int eqPrecSquareMatrix(SquareMatrix* a, SquareMatrix* b, double prec)
     dimension can be given. This will allow the progam to read a matrix.
 */
 
-// Given a file name and a dimension reads (dim * dim) double values from given
-// file and returns a pointer to a matrix with said values. If the file does
-// not have enough values it simply makes them zero.
-// Obviously if there are too many values it doesn't read them
-SquareMatrix* readMatrix(int dim, char* fileName)
-{
-    // Open file
-    FILE* file = fopen(fileName, "r");
-    
-    // buffer and file length
-    char* buffer;
-    long fileLength;
-    
-    // if file != null
-    if (file)
-    {
-        // get the file length
-        fseek(file, 0, SEEK_END);
-        fileLength = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        
-        // allocate memory for buffer
-        buffer = malloc((size_t)fileLength);
-        
-        // if memory allocated
-        if (buffer)
-        {
-            fread(buffer, 1, (size_t)fileLength, file);
-        }
-        else
-        {
-            // Could not read array so throw error
-            throw(ArrayReadFailure, NULL);
-        }
-        
-        // close file
-        fclose(file);
-    }
-    else
-    {
-        // Could not read file so throw error
-        char* args[1] = { fileName };
-        throw(FileException, args);
-    }
-    
-    
-    // Create a new matrix to populate
-    SquareMatrix* matrix = newMatrix(dim);
-    
-    // Starting pointer
-    char* pStart = buffer;
-    
-    // End pointer (for strtod)
-    char* pEnd;
-    
-    // Number of elements read
-    int count = 0;
-    
-    // While the starting pointer is less than the buffer pointer
-    // plus the length of the buffer (i.e. when still in the buffer)
-    // AND the count is less than expected number of entries
-    while (pStart < (buffer + fileLength) && count < (dim * dim))
-    {
-        // The "count"th entry is the next readable double 
-        matrix->array[count] = strtod(pStart, &pEnd);
-        // Increment number of elements read
-        ++count;
-        // We wish to skip commas (or any deliminator really)
-        pStart = pEnd + 1;
-    }
-    
-    return matrix;
-}
 
 // Prints the matrix
 void printMatrix(SquareMatrix* matrix)
@@ -604,46 +520,5 @@ void fprintMatrix(FILE* file, SquareMatrix* matrix)
     }
 }
 
-/*
------ Error handling -----------------------------------------------------------
-*/
 
-// Prints error message (or Success) with arguments and exits
-void throw(Error e, char** args)
-{
-    switch (e)
-    {        
-        case FileException:
-            printf("Error: Could not read file: %s\n", args[0]);
-            break;
-    
-        case ArgNumException:
-            printf("Error: Incorrect number of arguments given.\n");
-            break;
-        
-        case ArrayReadFailure:
-            printf("Error: Could not read array.\n");
-            break;
-            
-        case PrecisionException:
-            printf("Error: Given precision is too small. or invalid\n");
-            break;
-            
-        case DimensionException:
-            printf("Error: Given dimension is too small or invalid.\n");
-            break;
-            
-        case ThreadNumException:
-            printf("Error: Given thread number is too small or invalid.\n");
-            break;
-            
-        case DimStepException:
-            printf("Error: Given dimension step in parameter -T invalid.\n");
-            break;
-    }
-    
-    // Exit with error code
-    printf("Program exiting.\n");
-    exit(e);
-}
 

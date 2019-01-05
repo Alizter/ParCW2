@@ -1,16 +1,19 @@
 CC = mpicc
-CFLAGS = -g -pthread -Wall -Wconversion -Wextra -lm -l pthread -lrt -std=gnu99
+CFLAGS = -g -pthread -lm -lrt -std=gnu99 -Wall -Wextra #-Wconversion 
+
+main_dep = main.o parcw2.o error.o
 
 .PHONY: all test clean main
 
-main : main.o parcw.o parcw2.o
-	$(CC) -o main main.o parcw.o parcw2.o $(CFLAGS) 
+
+main : $(main_dep)
+	$(CC) -o main $(main_dep) $(CFLAGS)
 
 clean :
-	-rm main.o test.o *.o 2> /dev/null
+	-rm *.o 2> /dev/null
 	
-test : test.o parcw.o
-	$(CC) -o test test.o parcw.o parcw2.o $(CFLAGS)
+test : test.o $(main_dep)
+	$(CC) -o test test.o $(main_dep) $(CFLAGS)
 	./test
 
 all : main test

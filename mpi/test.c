@@ -4,7 +4,7 @@
 int main(int argc, char **argv)
 {
     // Allocating buffer for processor name
-    char name[MPI_MAX_PROCESSOR_NAME];
+//    char name[MPI_MAX_PROCESSOR_NAME];
     
     // Initialising MPI with return code
     int returnCode = MPI_Init(&argc, &argv);
@@ -27,23 +27,28 @@ int main(int argc, char **argv)
 
     int n[nproc];
     
-    
 
     if (myrank == 0) // if the main process
     {
+        printf("Begining main process");
+    
         for (int i = 0; i < nproc; i++)
         {
             n[i] = i*i;
         }
-    
-        // Send 
+        
+        
         for (int i = 0; i < nproc; i++)
-        {
-            MPI_Send(n + i, 1, MPI_INT, i, 99, MPI_COMM_WORLD);
-        
-            printf("main sending message to %d", i);
+        {        
+            // Send 
+            MPI_Send(n, 1, MPI_INT, i, 99, MPI_COMM_WORLD);
+            printf("main sent message to %d", i);
         }
+    
         
+        
+        
+                
         
         //MPI_Send(n, 5, MPI_INT, 1, 99, MPI_COMM_WORLD);
     
@@ -51,29 +56,31 @@ int main(int argc, char **argv)
     
     // for the communicator world put a barrier
     // this ensures that main reports is printed first
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
 
     //printf("waiting for main to finish...");
     
-    MPI_Status* stat;
-    MPI_Recv(n + myrank, 1, MPI_INT, 0, 99, MPI_COMM_WORLD, stat);
+    MPI_Status stat;
+    MPI_Recv(n, nproc, MPI_INT, 0, 99, MPI_COMM_WORLD, &stat);
     
-    printf("mpi process %d recieved from main with error %d", myrank, stat->MPI_ERROR);
-    
+    printf("mpi process %d recieved from main with error %d", myrank, stat.MPI_ERROR);
+    /*
     n[myrank] *= 4;
     n[myrank] += 3;
     
-    MPI_Send(n + myrank, 1, MPI_INT, 0, 99, MPI_COMM_WORLD);
+    MPI_Send(n, nproc, MPI_INT, 0, 99, MPI_COMM_WORLD);
     
     MPI_Barrier(MPI_COMM_WORLD);
+    
     
     if (myrank == 0)
     {
         for (int i = 0; i < nproc; i++)
         {
+            MPI_Recv(n, nproc, MPI_INT, i, 99, MPI_COMM_WORLD, stat);
             printf("main recieved %d from mpi process %d", n[i], i);
         }
-    }
+    }*/
     
     // name length allocated
     //int namelen = MPI_MAX_PROCESSOR_NAME;
