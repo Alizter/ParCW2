@@ -1,5 +1,5 @@
 CC = mpicc
-CFLAGS = -g -pthread -lm -lrt -std=gnu99 -Wall -Wextra #-Wconversion 
+CFLAGS = -g -pthread -lrt -std=gnu99 -Wall -Wextra #-Wconversion 
 
 main_dep = main.o parcw2.o error.o
 
