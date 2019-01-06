@@ -1,0 +1,26 @@
+#!/bin/sh
+#SBATCH --account=cm30225
+#SBATCH --partition=teaching
+
+#SBATCH --job-name=ac2288_mpi
+
+#SBATCH --nodes=2
+
+
+#SBATCH --ntasks-per-node=16
+#SBATCH --time=00:01:00
+
+#SBATCH --output=myjob.out
+
+
+#. /etc/profile.d/modules.sh
+#module purge
+#module load slurm
+#module load intel/compiler
+#module load openmpi/intel
+
+make
+
+#mpirun -np 2 xterm -e gdb --args ./main -d 10 -p 10E-10 array1
+mpirun -np 2 ./main -d 5 -p 10E-3 array1
+#mpirun -np $SLURM_NTASKS ./test -d 100 -p 10E-10 array1

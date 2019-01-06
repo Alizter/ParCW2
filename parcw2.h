@@ -12,13 +12,12 @@
 // MPI version of parIterate
 
 
-void parIterateMPI(char* fileName, int dim, double prec);
+void parIterateMPI(char* fileName, int dim, double prec, char* outFileName);
 void readMatrix(int dim, char* fileName, double* matrix);
 
 typedef struct 
 {
     int firstRow;  // First row 
-    int lastRow;   // Last row
     int count;     // Number of elements
 } IndexData ;
 

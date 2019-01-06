@@ -7,8 +7,11 @@
 #define recieve_tag     0xDEADBEEF
 
 
-void parIterateMPI(char* fileName, int dim, double prec)
+void parIterateMPI(char* fileName, int dim, double prec, char* outFileName)
 {
+
+
+
     int process_id;       // The rank of this process
     int num_process;      // The number of processes
     
@@ -17,10 +20,7 @@ void parIterateMPI(char* fileName, int dim, double prec)
     
     double* matrix = malloc(sizeof(double) * dim * dim);
 
-    // Initialise MPI
-    // Here all workers will run this code
-    //MPI_Init(NULL, NULL);
-    
+   
     // Get and set the process rank
     MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
     
@@ -99,7 +99,6 @@ void parIterateMPI(char* fileName, int dim, double prec)
                     
                     // Record data of start and end
                     indexData[i].firstRow = startRow;
-                    indexData[i].lastRow  = endRow;
                     indexData[i].count    = rowCount * dim;
                     
                     
@@ -222,11 +221,34 @@ void parIterateMPI(char* fileName, int dim, double prec)
         
         // Finished
         
-        // Clean up
+        // Writing output to file
+               
+        FILE* outFile = fopen(outFileName, "ab+");
+        
+        if (outFile == NULL)
+        {
+            // Could not read file so throw error
+            char* args[1] = { outFileName };
+            throwError(FileException, args);            
+        }
+        
+        for (int i = 0; i < dim; i++)
+        {
+            for (int j = 0; j < dim; j++)
+            {   
+            	fprintf(outFile, "%f ", oldRows[i * dim + j]);    
+            }
+            
+            fprintf(outFile, "\n");
+        }
+        
+        fclose(outFile);
+        
+        printf("Done.\n");
+        
         free(oldRows);
         free(newRows);
         free(indexData);
-        
     }
     else // If we are not the main process
     {
@@ -331,10 +353,6 @@ void parIterateMPI(char* fileName, int dim, double prec)
         free(oldRows);
         free(newRows);
     }
-    
-    
-    //Quit
-    //return 0; // TODO: could possibly return old values??
 }
 
 

@@ -1,7 +1,7 @@
 CC = mpicc
 CFLAGS = -g -pthread -lrt -std=gnu99 -Wall -Wextra #-Wconversion 
 
-main_dep = main.o parcw2.o error.o
+main_dep = main.o error.o
 
 .PHONY: all test clean main
 
