@@ -16,18 +16,25 @@
 
 #module load slurm
 
-#module load intel/compiler
+module load intel/compiler
 module load openmpi/intel
 
 make
 
-#echo "$SLURM_NTASKS"
+echo "$SLURM_NTASKS"
 
 #mpirun -np $SLURM_NTASKS ./main -d 100 -p 10E-4 array3
 
 mpirun -np 2 ./main -d 1000 -p 10E-4 array3
 mpirun -np 4 ./main -d 1000 -p 10E-4 array3
+mpirun -np 5 ./main -d 1000 -p 10E-4 array3
+mpirun -np 6 ./main -d 1000 -p 10E-4 array3
+mpirun -np 7 ./main -d 1000 -p 10E-4 array3
 mpirun -np 8 ./main -d 1000 -p 10E-4 array3
+mpirun -np 9 ./main -d 1000 -p 10E-4 array3
+mpirun -np 10 ./main -d 1000 -p 10E-4 array3
+mpirun -np 11 ./main -d 1000 -p 10E-4 array3
+mpirun -np 12 ./main -d 1000 -p 10E-4 array3
 mpirun -np 16 ./main -d 1000 -p 10E-4 array3
 mpirun -np 24 ./main -d 1000 -p 10E-4 array3
 mpirun -np 32 ./main -d 1000 -p 10E-4 array3
