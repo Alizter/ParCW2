@@ -1,13 +1,36 @@
 \documentclass{article}
 
-\title{Document Title}
+\title{Parallel Coursework 2}
 
 
 \begin{document}
 
-    \maketitle
+\maketitle
+
+\section{Implementation detail}
+
+The program begins with the main process parsing the input arguments whilst the other processes wait to recieve them. This was done to ensure that not all of the processes parse the same input arguments.
+
+Then the main process reads the array from a given file into memory. Afterwhich, it begins its computation. When going through the computation for the first time, the main process allocates indexes and row counts for later.
+
+The main process then sends all of the indicies and the data associated to each process which the indicies are assigned to. All of the chunks of data are sent at this point since it is the first time passing through. The main process also copies its allocated chunk from the read memory.
+
+On second passing only the last row is sent to the next process. This is because each process will have 2 extra rows which will be updated each iteration. These will be recieved from the responsible thread. In this case the main thread is resposible for sending it to the next process, and likewise for the next process which will send its first row to the main thread, hence we recieve it.
+
+During the loop, we need to process each chunk. The main thread goes through each element of the chunk and updates the array newRows from the values of oldRows accordingly. It then proceeds to calculate the precision, which is the difference from the previous value. If the precision calculated is larger than our allowed precision then a flag is set detailing this.
+
+The main process then proceeds to collect the precision data from the other processes. 
+
+\section{Testing}
 
 
+\section{Speedup}
+
+
+\section{Efficiency}
+
+
+\section{Scalibility}
 
 
 \end{document}

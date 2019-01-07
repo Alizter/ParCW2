@@ -123,11 +123,6 @@ int main(int argc, char** argv)
     {
         num_process = dim - 2;
 
-        // TODO: is this really necessery?
-        if (process_id > num_process - 1) 
-        {
-            // TODO: throw something
-        }
     }
     
         
