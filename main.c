@@ -300,7 +300,7 @@ int main(int argc, char** argv)
         
         
         // Writing output to file
-        FILE* outFile = fopen(outFileName, "ab+");
+        /*FILE* outFile = fopen(outFileName, "ab+");
         
         if (outFile == NULL)
         {
@@ -319,10 +319,22 @@ int main(int argc, char** argv)
             fprintf(outFile, "\n");
         }
         
-        //printf("\n\nTime:\n%lf s\n", process_id, time);
-        fprintf(outFile, "\n\nTime:\n%lf s\n", process_id, time);
-        
         fclose(outFile);
+        */
+        
+        FILE* timingFile = fopen("timings", "ab+");
+        
+        if (timingFile == NULL)
+        {
+            // Could not open file so throw error
+            char* args[1] = { "timings" };
+            throwError(FileException, args);            
+        }
+        
+        fprintf(timingFile, "Dim: %d, Prec %f, NoProc: %d Time:\n%lf s\n", dim, 
+            prec, num_process, time);
+        
+        fclose(timingFile);
        
         free(oldRows);
         free(newRows);
@@ -334,19 +346,15 @@ int main(int argc, char** argv)
         inPrecision = 0;
         int numOfRows;
 
-        //printf("Proc %d: Recieving number of rows from main\n", process_id);
         // Recieve rows from main process
         MPI_Recv(&numOfRows, 1, MPI_INT, 
             0, send_row_count, MPI_COMM_WORLD, &status);
-        //printf("Proc %d: Recieved number of rows from main: %d\n", process_id, numOfRows);
         
         int numOfElements = numOfRows * dim;
         
         double* oldRows = calloc(sizeof(double), numOfElements);
         double* newRows = calloc(sizeof(double), numOfElements);
        
-        //printf("Proc %d: Recieving %d elements from main\n", process_id, numOfElements);
-        
         // Recieve elements
         MPI_Recv(oldRows, numOfElements, MPI_DOUBLE, 
             0, send_tag, MPI_COMM_WORLD, &status);
@@ -354,24 +362,11 @@ int main(int argc, char** argv)
         // Copy old into new for switching later
         memcpy(newRows, oldRows, numOfElements * sizeof(double));
         
-        /*sleep(1);
-        printf("Proc %d: Recieved elements from main into oldRows\n", process_id);
-        printMatrix2(oldRows, dim, numOfRows);
-        sleep(1);
-        
-        sleep(1);
-        printf("Proc %d: Copied %d elements from old into new \n", process_id, numOfElements);
-        printMatrix2(newRows, dim, numOfRows);
-        sleep(1);*/
-        
         int firstTime = 1;
         
         //Now we can process our values
         while (!inPrecision)
         {
-            //printf("Proc %d: Processing on iteration number %d\n", 
-            //    process_id, iterations++); 
-        
             if (!firstTime)
             {
                 // Send first row to previous process
@@ -433,31 +428,18 @@ int main(int argc, char** argv)
                 }
             }
             
-            //printf("Proc %d: In precision: %f\n", process_id, inPrecision);
-            
-            
             // Send (blocking) back results of precision to main process
             MPI_Send(&inPrecision, 1, MPI_INT, 0, tag_flaginprec, MPI_COMM_WORLD);
             
             // Wait for signal from main process
             MPI_Recv(&inPrecision, 1, MPI_INT, 0, 
                 tag_flaginprec, MPI_COMM_WORLD, &status);
-            
-      /*      sleep(1);
-            printf("Proc %d: newRows :\n", process_id);
-            printMatrix2(newRows, dim, numOfRows);
-            sleep(1);*/
-            
+           
             // Swap old and new for next iteration
             double* temp = oldRows;
             oldRows = newRows;
             newRows = temp;
         }
-        
-      /*  sleep(1);
-        printf("Proc %d: Sending back to main:\n", process_id);
-        printMatrix2(oldRows, dim, numOfRows);
-        sleep(1);*/
         
         // This process has finished so it sends back its array to main process
         MPI_Send(oldRows, numOfElements, MPI_DOUBLE, 0, 
@@ -470,11 +452,8 @@ int main(int argc, char** argv)
     
     //printf("Proc %d: Done.\n", process_id);
 
-
-
     // Finalize MPI
     MPI_Finalize();
-
     
     // Exit the program Successfully
     //printf("Program finished.\n");
