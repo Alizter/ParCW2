@@ -13,8 +13,8 @@
 #SBATCH --output=myjob.out
 
 
-#module load intel/compiler
-#module load openmpi/intel
+module load intel/compiler
+module load openmpi/intel
 
 make
 
