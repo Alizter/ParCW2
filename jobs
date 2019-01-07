@@ -13,13 +13,13 @@
 #SBATCH --output=myjob.out
 
 
-. /etc/profile.d/modules.sh
-module purge
-module load slurm
-module load intel/compiler
-module load openmpi/intel
+#. /etc/profile.d/modules.sh
+#module purge
+#module load slurm
+#module load intel/compiler
+#module load openmpi/intel
 
-make
+#make
 
 #mpirun -np 2 xterm -e gdb --args ./main -d 10 -p 10E-10 array1
 #mpirun -np 8 ./main -d 20 -p 10E-10 array2
