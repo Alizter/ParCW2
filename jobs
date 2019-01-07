@@ -7,7 +7,7 @@
 #SBATCH --nodes=2
 
 
-#SBATCH --ntasks-per-node=16
+#SBATCH --ntasks-per-node=8
 #SBATCH --time=00:15:00
 
 #SBATCH --output=myjob.out
@@ -25,4 +25,4 @@ make
 #mpirun -np 8 ./main -d 20 -p 10E-10 array2
 #mpirun -np $SLURM_NTASKS ./test -d 100 -p 10E-10 array1
 
-mpirun -np $SLURM_NTASKS ./main -d 500 -p 10E-6 array4
+mpirun -np $SLURM_NTASKS ./main -d 100 -p 10E-4 array3
