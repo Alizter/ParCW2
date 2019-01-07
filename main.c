@@ -7,8 +7,47 @@
 #include "error.h"
 
 #define send_row_count  100
+#define tag_precision   400
+#define tag_dim         500
+#define tag_flaginprec  600
+
 #define send_tag        200
 #define recieve_tag     300
+
+
+int unix_pid;
+int process_id;       // The rank of this process
+
+
+void *_malloc(int size)
+{
+    void *p = malloc(size);
+    printf("Proc %d: malloc %X\n", process_id, (unsigned)p);
+    return p;
+}
+
+void *_calloc(int size, int count)
+{
+    void *p = calloc(size, count);
+    printf("Proc %d: calloc %X. %d elems of %d bytes. Total: %d bytes\n", process_id, (unsigned)p, count, size, size * count);
+    return p;
+}
+
+
+void _free(void*p)
+{
+    printf("Proc %d: free %X\n", process_id, (unsigned)p);
+    free(p);
+}
+
+
+int _MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
+             MPI_Comm comm, MPI_Status *status)
+{
+   int r = MPI_Recv(buf,  count,  datatype,  source, tag, comm, status);
+   printf("Proc %d: Recved to %X, %d element(s). tag: %d\n", process_id, buf, count, tag);
+   return r;   
+}
 
 void readMatrix(int dim, char* fileName, double* p_matrix);
 
@@ -32,6 +71,19 @@ void printMatrix(double* matrix, int dim)
     }
 }
 
+void printMatrix2(double* matrix, int dim, int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        for (int j = 0; j < dim; j++)
+        {   
+        	printf("%f ", matrix[i * dim + j]);    
+        }
+        
+        printf("\n");
+    }
+}
+
 /*
 --------- Main program ---------------------------------------------------------
 */
@@ -42,11 +94,13 @@ int main(int argc, char** argv)
     // Initialise MPI
     MPI_Init(&argc, &argv);
     
-    int process_id;       // The rank of this process
     int num_process;      // The number of processes
        
     // Get and set the process rank
     MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
+    
+    unix_pid = getpid();
+    printf("Proc %d:PID: %d\n", process_id, unix_pid);
     
     // Get and set the number of process
     MPI_Comm_size(MPI_COMM_WORLD, &num_process);
@@ -105,16 +159,17 @@ int main(int argc, char** argv)
         for (int i = 1; i < num_process; i++)
         {
              MPI_Isend(&dim, 1, MPI_INT, i, 
-                send_tag, MPI_COMM_WORLD, &request);
+                tag_dim, MPI_COMM_WORLD, &request);
                 
              MPI_Isend(&prec, 1, MPI_DOUBLE, i, 
-                send_tag, MPI_COMM_WORLD, &request);
+                tag_precision, MPI_COMM_WORLD, &request);
         }
     }
     else
     {
-        MPI_Recv(&dim, 1, MPI_INT, 0, send_tag, MPI_COMM_WORLD, &status);
-        MPI_Recv(&prec, 1, MPI_DOUBLE, 0, send_tag, MPI_COMM_WORLD, &status);
+        //sleep(5);
+        _MPI_Recv(&dim, 1, MPI_INT, 0, tag_dim, MPI_COMM_WORLD, &status);
+        _MPI_Recv(&prec, 1, MPI_DOUBLE, 0, tag_precision, MPI_COMM_WORLD, &status);
     }
   
     
@@ -126,28 +181,32 @@ int main(int argc, char** argv)
     }
     
         
-    printf("Proc %d: Computation begun...", process_id);
+    printf("Proc %d: Computation begun...\n", process_id);
   
     
     int iterations = 0;   // number of iterations
     int inPrecision = 0;  // Flag for when precision is reached
     
-    double* p_matrix = calloc(sizeof(double), dim * dim);
     
     // If we are the main process
     if (process_id == 0)
     {
         printf("Proc %d: Reading matrix\n", process_id);
+        
         // Reads dim*dim double values from filename
         // into the double* matrix.
+        double* p_matrix = _calloc(sizeof(double), dim * dim);
         readMatrix(dim, fileName, p_matrix);
         
-       // printMatrix(p_matrix, dim);
+        //printMatrix(p_matrix, dim);
+        //sleep(1);
         
         printf("Proc %d: Read matrix\n", process_id);
         
         // How many rows each process should get
         int numOfRows = 2 + (dim - 2) / num_process;
+        printf("Proc %d: calculated numOfRows %d\n", process_id, numOfRows);
+        
         // The extra rows left over
         // noted for allocation
         int extraRows = (dim - 2) % num_process;
@@ -155,19 +214,21 @@ int main(int argc, char** argv)
         // Index of end row for main thread
         //int endRow = avg_rows;
         
-        double* oldRows = calloc(sizeof(double), numOfRows * dim);
-        double* newRows = calloc(sizeof(double), numOfRows * dim);
-        
+        double* oldRows = _calloc(sizeof(double), dim * dim);
+        double* newRows = _calloc(sizeof(double), dim * dim);
+
+
         // Data storing all the indicies
-        IndexData* pIndexData = calloc(sizeof(IndexData), num_process);
+        IndexData* pIndexData = _calloc(sizeof(IndexData), num_process);
+
         
         printf("Proc %d: Begining loop\n", process_id);
         
         while (!inPrecision)
         {
             //
-            printMatrix(oldRows, dim);
-            sleep(5);
+            //printMatrix(oldRows, dim);
+            //sleep(5);
             
             //
             iterations++;
@@ -203,7 +264,8 @@ int main(int argc, char** argv)
                     // Record data of start and end
                     pIndexData[i].firstRow = startRow;
                     pIndexData[i].count    = rowCount * dim;
-                    
+                    printf("Proc %d: pIndex[%d] (%d, %d) \n", process_id, i,
+                        pIndexData[i].firstRow, pIndexData[i].count);
                     
                     // MPI send data to process
                     // It can be non blocking
@@ -225,7 +287,10 @@ int main(int argc, char** argv)
                 // will likely never happen. So we won't check for it
                 
                 // Allocate chunks for main array
-                memcpy(oldRows, p_matrix, numOfRows * dim);
+                memcpy(oldRows, p_matrix, dim * dim * sizeof(double));
+                memcpy(newRows, p_matrix, dim * dim * sizeof(double));
+                
+                
                 //newRows = p_matrix;
                 
             }
@@ -234,12 +299,12 @@ int main(int argc, char** argv)
                 //MPI_ISend
                printf("Proc %d: Sending last row to next\n", process_id);
                 //Send last row to next process
-                MPI_Isend(p_matrix + (numOfRows - 2) * dim, dim, 
+                MPI_Isend(oldRows + (numOfRows - 2) * dim, dim, 
                     MPI_DOUBLE, 1, send_tag, MPI_COMM_WORLD, &request);
                 
                 printf("Proc %d: Recieving last row from next\n", process_id);
                 // Recieve last row from next process
-                MPI_Recv(oldRows + (numOfRows - 1) * dim, dim,
+                _MPI_Recv(oldRows + (numOfRows - 1) * dim, dim,
                     MPI_DOUBLE, 1, send_tag, MPI_COMM_WORLD, &status);
                     
                printf("Proc %d: Recieved last row from next\n", process_id);
@@ -264,7 +329,7 @@ int main(int argc, char** argv)
                          + oldRows[i * dim + j - 1]
                          + oldRows[i * dim + j + 1]);
                          
-                    printf("Proc %d: precision: %f", process_id, fabs(
+                    printf("Proc %d: precision: %f\n", process_id, fabs(
                             oldRows[i * dim + j] - newRows[i * dim + j]));
                     
                     // If we are in precision and the difference between
@@ -293,8 +358,8 @@ int main(int argc, char** argv)
                 for (int i = 1; i < num_process; i++)
                 {
                     // Recieve whether they are in precision or not
-                    MPI_Recv(&all_inPrecision, 1, MPI_INT, i, 
-                        recieve_tag, MPI_COMM_WORLD, &status);
+                    _MPI_Recv(&all_inPrecision, 1, MPI_INT, i, 
+                        tag_flaginprec, MPI_COMM_WORLD, &status);
                     
                     printf("Proc %d: Process %d is in precision\n", process_id, i);
                     
@@ -313,7 +378,7 @@ int main(int argc, char** argv)
             for (int i = 1; i < num_process; i++)
             {
                 MPI_Isend(&inPrecision, 1, MPI_INT, i, 
-                    send_tag, MPI_COMM_WORLD, &request);
+                    tag_flaginprec, MPI_COMM_WORLD, &request);
             }
             
             // Swap old and new
@@ -330,19 +395,19 @@ int main(int argc, char** argv)
         // collect the rows from the process
         printf("Proc %d: Collecting rows from processes\n", process_id);
         
-        int index = 0;
+        //sleep(1);
+        //printf("Proc %d: Before collection:\n", process_id);
+        //printMatrix(oldRows, dim);
+        //sleep(1);
         
+        //TODO
         // For each process
         for (int i = 1; i < num_process; i++)
         {
             // Recieve into old rows
-            // doesn't matter since it won't bee used any more
-            // we use oldRows as it has the newest data ironically
-            MPI_Recv(oldRows + index, (pIndexData + i)->count, MPI_DOUBLE, i, 
+            _MPI_Recv(oldRows + (pIndexData + i)->firstRow * dim, 
+                (pIndexData + i)->count, MPI_DOUBLE, i, 
                 recieve_tag, MPI_COMM_WORLD, &status);
-                
-            // the array index
-            index += (pIndexData + i)->firstRow * dim;
         }
         
         printf("Proc %d: Finished collection\n", process_id);
@@ -373,12 +438,20 @@ int main(int argc, char** argv)
         }
         
         fclose(outFile);
-        
+       
+        sleep(1);
         printf("Proc %d: Finished\n", process_id);
         
-        free(oldRows);
-        free(newRows);
-        free(pIndexData);
+        printMatrix(oldRows, dim);
+        
+        printf("Before:\n");
+        
+        printMatrix(p_matrix, dim);
+
+        _free(oldRows);
+        _free(newRows);
+        _free(pIndexData);
+        
     }
     else // If we are not the main process
     {
@@ -387,22 +460,33 @@ int main(int argc, char** argv)
 
         printf("Proc %d: Recieving number of rows from main\n", process_id);
         // Recieve rows from main process
-        MPI_Recv(&numOfRows, 1, MPI_INT, 
+        _MPI_Recv(&numOfRows, 1, MPI_INT, 
             0, send_row_count, MPI_COMM_WORLD, &status);
-        printf("Proc %d: Recieved number of rows from main\n", process_id);
+        printf("Proc %d: Recieved number of rows from main: %d\n", process_id, numOfRows);
         
         int numOfElements = numOfRows * dim;
         
-        double* oldRows = malloc(numOfRows * dim * sizeof(double));
-        double* newRows = malloc(numOfRows * dim * sizeof(double));
-        
+        double* oldRows = _calloc(sizeof(double), numOfElements);
+        double* newRows = _calloc(sizeof(double), numOfElements);
+       
         printf("Proc %d: Recieving %d elements from main\n", process_id, numOfElements);
         
         // Recieve elements
-        MPI_Recv(oldRows, numOfElements, MPI_DOUBLE, 
+        _MPI_Recv(oldRows, numOfElements, MPI_DOUBLE, 
             0, send_tag, MPI_COMM_WORLD, &status);
         
-        printf("Proc %d: Recieved elements from main\n", process_id);
+        // Copy old into new for switching later
+        memcpy(newRows, oldRows, numOfElements * sizeof(double));
+        
+        /*sleep(1);
+        printf("Proc %d: Recieved elements from main into oldRows\n", process_id);
+        printMatrix2(oldRows, dim, numOfRows);
+        sleep(1);
+        
+        sleep(1);
+        printf("Proc %d: Copied %d elements from old into new \n", process_id, numOfElements);
+        printMatrix2(newRows, dim, numOfRows);
+        sleep(1);*/
         
         int firstTime = 1;
         
@@ -428,7 +512,7 @@ int main(int argc, char** argv)
                 
                 // Recieve last row from previous process and 
                 // put it before first
-                MPI_Recv(oldRows, dim, MPI_DOUBLE, process_id - 1,  
+                _MPI_Recv(oldRows, dim, MPI_DOUBLE, process_id - 1,  
                     send_tag, MPI_COMM_WORLD, &status); 
                     
                 // If we are not the last process
@@ -436,7 +520,7 @@ int main(int argc, char** argv)
                 {
                     // Recieve first row from next process and
                     //put it after last row
-                    MPI_Recv(oldRows + (numOfRows - 1) * dim, dim, MPI_DOUBLE, 
+                    _MPI_Recv(oldRows + (numOfRows - 1) * dim, dim, MPI_DOUBLE, 
                         process_id + 1, send_tag, MPI_COMM_WORLD, &status);
                 }              
             }
@@ -450,26 +534,17 @@ int main(int argc, char** argv)
             inPrecision = 1;
             
             printf("Proc %d: Begining computation\n", process_id);
-            
-            double max_prec = 0.0;
-            
+
             for (int i = 1; i < numOfRows - 1; i++)
             {
                 for (int j = 1; j < dim - 1; j++)
                 {
-                    printf("Proc %d: Processing row %d, col %d\n", process_id, i, j);
                     newRows[i * dim + j] = 
                         0.25 
                         * (oldRows[(i - 1) * dim + j]
                          + oldRows[(i + 1) * dim + j]
                          + oldRows[i * dim + j - 1]
                          + oldRows[i * dim + j + 1]);
-                    
-                    double prec = fabs(oldRows[i * dim + j] - newRows[i * dim + j]);
-                    if (max_prec < prec)
-                    {
-                        max_prec = prec;
-                    }
                     
                     // If we are in precision and the difference between
                     // old and new is greater than allowed then we are out
@@ -482,15 +557,20 @@ int main(int argc, char** argv)
                 }
             }
             
-            printf("Proc %d: precision: %f\n", process_id, max_prec);
+            printf("Proc %d: In precision: %f\n", process_id, inPrecision);
             
             
             // Send (blocking) back results of precision to main process
-            MPI_Send(&inPrecision, 1, MPI_INT, 0, recieve_tag, MPI_COMM_WORLD);
+            MPI_Send(&inPrecision, 1, MPI_INT, 0, tag_flaginprec, MPI_COMM_WORLD);
             
             // Wait for signal from main process
-            MPI_Recv(&inPrecision, 1, MPI_INT, 0, 
-                send_tag, MPI_COMM_WORLD, &status);
+            _MPI_Recv(&inPrecision, 1, MPI_INT, 0, 
+                tag_flaginprec, MPI_COMM_WORLD, &status);
+            
+      /*      sleep(1);
+            printf("Proc %d: newRows :\n", process_id);
+            printMatrix2(newRows, dim, numOfRows);
+            sleep(1);*/
             
             // Swap old and new for next iteration
             double* temp = oldRows;
@@ -498,16 +578,21 @@ int main(int argc, char** argv)
             newRows = temp;
         }
         
+      /*  sleep(1);
+        printf("Proc %d: Sending back to main:\n", process_id);
+        printMatrix2(oldRows, dim, numOfRows);
+        sleep(1);*/
+        
         // This process has finished so it sends back its array to main process
         MPI_Send(oldRows, numOfElements, MPI_DOUBLE, 0, 
             recieve_tag, MPI_COMM_WORLD);
         
         // Finally clean up mallocs
-        free(oldRows);
-        free(newRows);
+        _free(oldRows);
+        _free(newRows);
     }
     
-    printf("Done.\n");
+    printf("Proc %d: Done.\n", process_id);
 
     // Finalize MPI
     MPI_Finalize();
@@ -536,7 +621,7 @@ void readMatrix(int dim, char* fileName, double* p_matrix)
         fseek(file, 0, SEEK_SET);
         
         // allocate memory for buffer
-        buffer = malloc((size_t)fileLength);
+        buffer = _malloc((size_t)fileLength);
         
         // if memory allocated
         if (buffer)
@@ -561,7 +646,7 @@ void readMatrix(int dim, char* fileName, double* p_matrix)
     
     
     // Create a new matrix to populate
-    //p_matrix = malloc(sizeof(double)*(dim * dim));
+    //p_matrix = _malloc(sizeof(double)*(dim * dim));
     
     // Starting pointer
     char* pStart = buffer;

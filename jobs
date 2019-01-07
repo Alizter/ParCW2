@@ -22,5 +22,5 @@
 make
 
 #mpirun -np 2 xterm -e gdb --args ./main -d 10 -p 10E-10 array1
-mpirun -np 2 ./main -d 5 -p 10E-3 array1
+mpirun -np 2 ./main -d 10 -p 10E-10 array2
 #mpirun -np $SLURM_NTASKS ./test -d 100 -p 10E-10 array1
