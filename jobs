@@ -12,7 +12,10 @@
 
 #SBATCH --output=myjob.out
 
+#SBATCH --mail-user=ac2288@bath.ac.uk
+
 #module load slurm
+
 #module load intel/compiler
 module load openmpi/intel
 
