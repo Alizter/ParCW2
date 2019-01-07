@@ -1,0 +1,5 @@
+#!/bin/sh
+
+#module load slurm
+#module load intel/compiler
+#module load openmpi/intel

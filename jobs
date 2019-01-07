@@ -15,9 +15,9 @@
 
 #. /etc/profile.d/modules.sh
 #module purge
-module load slurm
-module load intel/compiler
-module load openmpi/intel
+#module load slurm
+#module load intel/compiler
+#module load openmpi/intel
 
 #make
 
