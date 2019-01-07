@@ -12,9 +12,9 @@
 
 #SBATCH --output=myjob.out
 
-module load slurm
-module load intel/compiler
-module load openmpi/intel
+#module load slurm
+#module load intel/compiler
+#module load openmpi/intel
 
 make
 
