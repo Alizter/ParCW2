@@ -13,9 +13,9 @@
 #SBATCH --output=myjob.out
 
 
-. /etc/profile.d/modules.sh
-module purge
-odule load slurm
+#. /etc/profile.d/modules.sh
+#module purge
+module load slurm
 module load intel/compiler
 module load openmpi/intel
 
