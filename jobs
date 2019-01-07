@@ -7,7 +7,7 @@
 #SBATCH --nodes=2
 
 
-#SBATCH --ntasks-per-node=8
+#SBATCH --ntasks-per-node=4
 #SBATCH --time=00:15:00
 
 #SBATCH --output=myjob.out
