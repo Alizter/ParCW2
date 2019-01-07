@@ -24,3 +24,10 @@ make
 #echo "$SLURM_NTASKS"
 
 #mpirun -np $SLURM_NTASKS ./main -d 100 -p 10E-4 array3
+
+mpirun -np 2 ./main -d 1000 -p 10E-4 array3
+mpirun -np 4 ./main -d 1000 -p 10E-4 array3
+mpirun -np 8 ./main -d 1000 -p 10E-4 array3
+mpirun -np 16 ./main -d 1000 -p 10E-4 array3
+mpirun -np 24 ./main -d 1000 -p 10E-4 array3
+mpirun -np 32 ./main -d 1000 -p 10E-4 array3
