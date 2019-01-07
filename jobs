@@ -25,20 +25,8 @@ echo "$SLURM_NTASKS"
 
 #mpirun -np $SLURM_NTASKS ./main -d 100 -p 10E-4 array3
 
-
-
-
-
-
-mpirun -np 7 ./main -d 1000 -p 10E-4 array3
-mpirun -np 8 ./main -d 1000 -p 10E-4 array3
-mpirun -np 9 ./main -d 1000 -p 10E-4 array3
-mpirun -np 10 ./main -d 1000 -p 10E-4 array3
-mpirun -np 11 ./main -d 1000 -p 10E-4 array3
-mpirun -np 12 ./main -d 1000 -p 10E-4 array3
+mpirun -np 13 ./main -d 500 -p 10E-4 array3
 mpirun -np 13 ./main -d 1000 -p 10E-4 array3
-mpirun -np 14 ./main -d 1000 -p 10E-4 array3
-mpirun -np 15 ./main -d 1000 -p 10E-4 array3
-mpirun -np 16 ./main -d 1000 -p 10E-4 array3
-mpirun -np 24 ./main -d 1000 -p 10E-4 array3
-mpirun -np 32 ./main -d 1000 -p 10E-4 array3
+mpirun -np 13 ./main -d 1500 -p 10E-4 array3
+mpirun -np 13 ./main -d 2000 -p 10E-4 array3
+mpirun -np 13 ./main -d 2500 -p 10E-4 array3
