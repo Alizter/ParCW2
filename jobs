@@ -12,12 +12,12 @@
 
 #SBATCH --output=myjob.out
 
-
+module load slurm
 module load intel/compiler
 module load openmpi/intel
 
 make
 
-echo "$SLURM_NTASKS"
+#echo "$SLURM_NTASKS"
 
 #mpirun -np $SLURM_NTASKS ./main -d 100 -p 10E-4 array3
