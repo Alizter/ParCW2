@@ -14,7 +14,7 @@
 
 #module load slurm
 #module load intel/compiler
-#module load openmpi/intel
+module load openmpi/intel
 
 make
 
