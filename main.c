@@ -331,7 +331,7 @@ int main(int argc, char** argv)
             throwError(FileException, args);            
         }
         
-        fprintf(timingFile, "Dim: %d, Prec %f, NoProc: %d Time:\n%lf s\n", dim, 
+        fprintf(timingFile, "Dim: %d, Prec %f, NoProc: %d Time: %lf s\n", dim, 
             prec, num_process, time);
         
         fclose(timingFile);
